@@ -18,6 +18,6 @@ from django.urls import path,include
 # 这里的总的路由，来自不同app的路由都需要在这里汇总
 
 urlpatterns = [
-        path('',include('game.urls')),
+        #path('',include('game.urls')),
         path('admin/', admin.site.urls),
 ]
