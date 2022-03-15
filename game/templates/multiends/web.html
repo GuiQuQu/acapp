@@ -3,11 +3,12 @@
     <link rel="stylesheet" href="https://cdn.acwing.com/static/jquery-ui-dist/jquery-ui.min.css">
     <script src="https://cdn.acwing.com/static/jquery/js/jquery-3.3.1.min.js"></script>
     <link rel="stylesheet" href={% static 'css/game.css'%}>
-    <script src={% static 'js/dist/game.js'%}></script>
 </head>
 <body style="margin:0">
     <div id = "ac_game_123"></div>
-    <script>
+    <!--采用import from ""的方式只会引入AcGame，并且不作为全局变量，采用原来的方式全都会作为全局变量，不能重名,导入的类前需要加上export-->
+    <script type="module">
+        import {AcGame} from "{% static 'js/dist/game.js'%}"
         $(document).ready(function(){
             let ac_game = new AcGame("ac_game_123");
         });
