@@ -1,2 +1,39 @@
-ac_game.menu{
+.ac_game_menu{
+    width:100%;
+    height:100%;
+    background-image:url("/static/image/menu/seika.jpg");
+    background-size: 100% 100%
+}
+
+.ac_game_menu_field
+{
+    /*vh,vw是百分比，整个高度是100vh,整个宽度是100vw*/
+    width:10vh;
+    position:relative;  /*相对位置*/
+    top:40vh; /*左上角距离上方的高度*/
+    left:19vw; /*到左边的宽度*/
+    user-select:none; /*加上之后该页面不可被选中*/
+}
+
+.ac_game_menu_item
+{
+   color:black;
+   height:6vh;
+   width:18vw;
+   font-size:4vh;
+   font-style:italic;
+   text-align:center;
+   padding:2vh;
+   background-color:rgba(221,221,221,0.6);
+   border-radius:10px; /*边框圆角*/
+   letter-spacing:0.5vw; /*字间距*/
+   cursor:pointer; /*鼠标悬停样式,变成手形*/
+}
+/*控制鼠标悬停时的效果*/
+.ac_game_menu_item:hover
+{
+    /*逐渐变大，直到它的1.2倍*/
+    transform:scale(1.2);
+    /*动画时间100ms*/
+    transition:100ms;
 }
