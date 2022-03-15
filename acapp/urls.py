@@ -16,8 +16,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path,include
 # 这里的总的路由，来自不同app的路由都需要在这里汇总
-
+# acapp(项目名)下的urls.py，统领全局的连接与函数的关系
 urlpatterns = [
-        #path('',include('game.urls')),
+        path('',include('game.urls.index')),
         path('admin/', admin.site.urls),
 ]
