@@ -149,6 +149,7 @@ class GameMap extends AcGameObject //继承自基类
     render()
     {
         //console.log("render...")
+        //增加透明度为0.2,这样渲染的时候就会慢慢变成黑色，涂多了就是黑色了，有一个渐变的过程
         this.ctx.fillStyle = "rgba(0,0,0,0.2)";
         this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
     }
@@ -162,6 +163,9 @@ class Player extends AcGameObject{
         this.ctx = this.playground.game_map.ctx;
         this.x = x;
         this.y = y;
+        this.vx =0;
+        this.vy =0;
+        this.move_length =0;
         this.radius = radius;
         this.color = color; 
         this.speed = speed; //speed 使用地图高度的百分比表示
@@ -171,12 +175,56 @@ class Player extends AcGameObject{
     }
 
     start(){
-    
+        if (this.is_me){
+            this.add_listening_events();
+        }
     }
+    get_dist(x1,y1,x2,y2)
+    {
+        let dx =x2-x1;
+        let dy =y2-y1;
+        return Math.sqrt(dx*dx+dy*dy);
+    }
+    move_to(tx,ty)
+    {
+        this.move_length = this.get_dist(this.x,this.y,tx,ty);
+        //console.log(tx,ty);
+        let angle =Math.atan2(ty-this.y,tx-this.x);
+        this.vx =Math.cos(angle);
+        this.vy =Math.sin(angle);
+    }
+    
+    add_listening_events()
+    {
+        let outer =this;
+        this.playground.game_map.$canvas.on("contextmenu",function(){
+            return false;
+        });
+        this.playground.game_map.$canvas.mousedown(function(e){
+            if (e.which ==1){
+                outer.move_to(e.clientX,e.clientY);
+            }
+        });
+        
+    }
+
     update(){
+            if (this.move_length<this.eps){
+                this.move_length = 0;
+                this.vx =0;
+                this.vy =0;
+            }
+            else
+            {            
+                let moved = Math.min(this.move_length,this.speed*this.timedelta/1000);
+                this.x += this.vx*moved;
+                this.y += this.vy*moved;
+                this.move_length-=moved;
+            }
         this.render();
     }
 
+    
     render(){
 
         this.ctx.beginPath();

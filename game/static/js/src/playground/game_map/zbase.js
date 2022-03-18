@@ -24,6 +24,7 @@ class GameMap extends AcGameObject //继承自基类
     render()
     {
         //console.log("render...")
+        //增加透明度为0.2,这样渲染的时候就会慢慢变成黑色，涂多了就是黑色了，有一个渐变的过程
         this.ctx.fillStyle = "rgba(0,0,0,0.2)";
         this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
     }
