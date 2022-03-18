@@ -69,6 +69,7 @@ class AcGameObject
         this.timedelta = 0; //当前帧距离上一帧的时间间隔,单位毫秒
         //因为可能不同浏览器的刷新频率不同，每次刷新都执行update的话，
         //不同浏览器实际的刷新频率就不一样，因此需要使用时间来衡量
+        console.log("调用了AcGameObject的构造函数")
     }
 
     start()  //只会在第一帧执行
@@ -78,7 +79,7 @@ class AcGameObject
 
     update()  //每一帧都会执行一次
     {
-
+        //console.log('update...')
     }
 
     on_destroy()  //删掉物体前执行,例如给对手加分等操作
@@ -90,8 +91,7 @@ class AcGameObject
         this.on_destory();
         for (let i=0;i<AC_GAME_OBJECT.length;i++)
         {//js里最好用3个等号，表示全等
-            if (AC_GAME_OBJECT[i]===this)
-            {
+            if (AC_GAME_OBJECT[i]===this){
                 AC_GAME_OBJECT.split(i,1); //从下标i开始，删除一个
                 break;
             }
@@ -101,23 +101,23 @@ class AcGameObject
 }
 
 let last_timestamp=0;
-let AC_GAME_ANIMATION = function(timestamp)
-{
+let AC_GAME_ANIMATION = function(timestamp){
     //timestamp 当前时间戳
-    for (let i = 0;i<AC_GAME_OBJECT.lengths;i++)
+    //console.log(AC_GAME_OBJECT.length);
+    for (let i = 0;i<AC_GAME_OBJECT.length;i++)
     {
         let obj = AC_GAME_OBJECT[i];
-        if (!obj.has_called_start)
-        {
+        if (!obj.has_called_start){
             obj.start();
-            obj.has_called_start = true;
-        }else
-        {
-            obj.timedelta = timestamp - last_timestamp;
-            update(AC_GAME_OBJECT[i]);
+            obj.has_called_start= true;
         }
-        last_timestamp = timesstamp; //更新上一帧时间戳
+        else
+        {
+            obj.timedelta = timestamp -last_timestamp;
+            obj.update();
+        }
     }
+    last_timestamp = timestamp;
     requestAnimationFrame(AC_GAME_ANIMATION); //通过递归保证循环执行
 }
 
@@ -128,9 +128,9 @@ class GameMap extends AcGameObject //继承自基类
     constructor(playground)
     {
         super(); //调用基类构造函数
-        this.playground =playground;
+        this.playground = playground;
         this.$canvas = $(`<canvas></canvas>`); //画布渲染工具
-        this.ctx =this.$canvas[0].getContext("2d"); //在canvas的Context里面操作
+        this.ctx =this.$canvas[0].getContext("2d"); //在canvas的Context里面操作,2d画布
         this.ctx.canvas.width =this.playground.width;
         this.ctx.canvas.height =this.playground.height;
         this.playground.$playground.append(this.$canvas);
@@ -143,6 +143,46 @@ class GameMap extends AcGameObject //继承自基类
 
     update()
     {
+        this.render();
+    }
+
+    render()
+    {
+        //console.log("render...")
+        this.ctx.fillStyle = "rgba(0,0,0,0.2)";
+        this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
+    }
+}
+class Player extends AcGameObject{
+    constructor(playground,x,y,radius,color,speed,is_me)
+    {
+        super();
+        console.log("player")
+        this.playground = playground;
+        this.ctx = this.playground.game_map.ctx;
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.color = color; 
+        this.speed = speed; //speed 使用地图高度的百分比表示
+        this.is_me = is_me;
+        this.eps = 0.1;
+    
+    }
+
+    start(){
+    
+    }
+    update(){
+        this.render();
+    }
+
+    render(){
+
+        this.ctx.beginPath();
+        this.ctx.arc(this.x,this.y,this.radius,0,Math.PI*2,false);
+        this.ctx.fillStyle =this.color;
+        this.ctx.fill();
     }
 }
 class AcGamePlayGround
@@ -158,6 +198,8 @@ class AcGamePlayGround
         this.width = this.$playground.width();
         this.height = this.$playground.height();
         this.game_map = new GameMap(this);
+        this.players = [];
+        this.players.push(new Player(this,this.width/2,this.height/2,this.height*0.05,"white",this.height*0.15,true));
         this.start();
 
     }
