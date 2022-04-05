@@ -15,7 +15,7 @@ class Player extends AcGameObject{
         this.speed = speed; //speed 使用地图高度的百分比表示
         this.is_me = is_me;
         this.eps = 0.1;
-    
+        this.cur_skill =null;
     }
 
     start(){
@@ -38,28 +38,51 @@ class Player extends AcGameObject{
         this.vy =Math.sin(angle);
     }
     
-    add_listening_events()
-    {
-        let outer =this;
+    add_listening_events(){
+        let outer = this;
         this.playground.game_map.$canvas.on("contextmenu",function(){
             return false;
         });
         this.playground.game_map.$canvas.mousedown(function(e){
-            if (e.which ==1){
-                outer.move_to(e.clientX,e.clientY);
+            if (e.which === 1){
+                if (outer.cur_skill === "fireball"){
+                   // console.log("fireballand e==1")
+                    outer.shoot_fireball(e.clientX,e.clientY);
+                    outer.cur_skill=null;
+                }
+                else{
+                    outer.move_to(e.clientX,e.clientY);
+                }
             }
         });
-        
+       $(window).keydown(function(e){
+            if (e.which === 81){
+                outer.cur_skill ="fireball";
+               // console.log("outer.cur_skill=fireball")
+                return false;
+            }
+       }); 
     }
-
+    shoot_fireball(tx,ty){
+        //console.log("shoot fireball",tx,ty);
+        let x = this.x;
+        let y = this.y;
+        let radius = this.playground.height * 0.01;
+        let angle = Math.atan2(ty-y,tx-x);
+        let vx = Math.cos(angle);
+        let vy = Math.sin(angle);
+        let color = "orange";
+        let speed = this.playground.height * 0.5;
+        let move_length = this.playground.height * 1;
+        new FireBall(this.playground,this,x,y,radius,vx,vy,color,speed,move_length);
+    }
     update(){
             if (this.move_length<this.eps){
                 this.move_length = 0;
                 this.vx =0;
                 this.vy =0;
             }
-            else
-            {            
+            else{            
                 let moved = Math.min(this.move_length,this.speed*this.timedelta/1000);
                 this.x += this.vx*moved;
                 this.y += this.vy*moved;
@@ -70,7 +93,6 @@ class Player extends AcGameObject{
 
     
     render(){
-
         this.ctx.beginPath();
         this.ctx.arc(this.x,this.y,this.radius,0,Math.PI*2,false);
         this.ctx.fillStyle =this.color;

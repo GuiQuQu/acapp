@@ -69,7 +69,7 @@ class AcGameObject
         this.timedelta = 0; //当前帧距离上一帧的时间间隔,单位毫秒
         //因为可能不同浏览器的刷新频率不同，每次刷新都执行update的话，
         //不同浏览器实际的刷新频率就不一样，因此需要使用时间来衡量
-        console.log("调用了AcGameObject的构造函数")
+        //console.log("调用了AcGameObject的构造函数")
     }
 
     start()  //只会在第一帧执行
@@ -82,7 +82,7 @@ class AcGameObject
         //console.log('update...')
     }
 
-    on_destroy()  //删掉物体前执行,例如给对手加分等操作
+    on_destory()  //删掉物体前执行,例如给对手加分等操作
     {
 
     }
@@ -92,7 +92,7 @@ class AcGameObject
         for (let i=0;i<AC_GAME_OBJECT.length;i++)
         {//js里最好用3个等号，表示全等
             if (AC_GAME_OBJECT[i]===this){
-                AC_GAME_OBJECT.split(i,1); //从下标i开始，删除一个
+                AC_GAME_OBJECT.splice(i,1); //从下标i开始，删除一个
                 break;
             }
         }
@@ -171,7 +171,7 @@ class Player extends AcGameObject{
         this.speed = speed; //speed 使用地图高度的百分比表示
         this.is_me = is_me;
         this.eps = 0.1;
-    
+        this.cur_skill =null;
     }
 
     start(){
@@ -194,28 +194,51 @@ class Player extends AcGameObject{
         this.vy =Math.sin(angle);
     }
     
-    add_listening_events()
-    {
-        let outer =this;
+    add_listening_events(){
+        let outer = this;
         this.playground.game_map.$canvas.on("contextmenu",function(){
             return false;
         });
         this.playground.game_map.$canvas.mousedown(function(e){
-            if (e.which ==1){
-                outer.move_to(e.clientX,e.clientY);
+            if (e.which === 1){
+                if (outer.cur_skill === "fireball"){
+                   // console.log("fireballand e==1")
+                    outer.shoot_fireball(e.clientX,e.clientY);
+                    outer.cur_skill=null;
+                }
+                else{
+                    outer.move_to(e.clientX,e.clientY);
+                }
             }
         });
-        
+       $(window).keydown(function(e){
+            if (e.which === 81){
+                outer.cur_skill ="fireball";
+               // console.log("outer.cur_skill=fireball")
+                return false;
+            }
+       }); 
     }
-
+    shoot_fireball(tx,ty){
+        //console.log("shoot fireball",tx,ty);
+        let x = this.x;
+        let y = this.y;
+        let radius = this.playground.height * 0.01;
+        let angle = Math.atan2(ty-y,tx-x);
+        let vx = Math.cos(angle);
+        let vy = Math.sin(angle);
+        let color = "orange";
+        let speed = this.playground.height * 0.5;
+        let move_length = this.playground.height * 1;
+        new FireBall(this.playground,this,x,y,radius,vx,vy,color,speed,move_length);
+    }
     update(){
             if (this.move_length<this.eps){
                 this.move_length = 0;
                 this.vx =0;
                 this.vy =0;
             }
-            else
-            {            
+            else{            
                 let moved = Math.min(this.move_length,this.speed*this.timedelta/1000);
                 this.x += this.vx*moved;
                 this.y += this.vy*moved;
@@ -226,10 +249,50 @@ class Player extends AcGameObject{
 
     
     render(){
-
         this.ctx.beginPath();
         this.ctx.arc(this.x,this.y,this.radius,0,Math.PI*2,false);
         this.ctx.fillStyle =this.color;
+        this.ctx.fill();
+    }
+}
+class FireBall extends AcGameObject{
+    constructor (playground,player,x,y,radius,vx,vy,color,speed,move_length){
+        super();
+        this.playground = playground;
+        this.player = player;
+        this.ctx = this.playground.game_map.ctx;
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.speed = speed;
+        this.move_length = move_length;
+        this.eps = 0.1;
+        //console.log(x,y,radius,vx,vy,color,speed,move_length);
+    }
+    start(){
+    
+    }
+    update(){
+        if (this.move_length < this.eps){
+            this.destroy();
+            return false;
+        }
+        let moved = Math.min(this.move_length,this.speed * this.timedelta / 1000);
+        this.x += this.vx * moved;
+        this.y += this.vy * moved;
+        this.move_length -= moved;
+
+        this.render();
+        //console.log("fire ball");
+    }
+    render(){
+        //console.log("fire ball update")
+        this.ctx.beginPath();
+        this.ctx.arc(this.x,this.y,this.radius,0,Math.PI * 2,false);
+        this.ctx.fillStyle = this.color;
         this.ctx.fill();
     }
 }
@@ -247,7 +310,7 @@ class AcGamePlayGround
         this.height = this.$playground.height();
         this.game_map = new GameMap(this);
         this.players = [];
-        this.players.push(new Player(this,this.width/2,this.height/2,this.height*0.05,"white",this.height*0.15,true));
+        this.players.push(new Player(this,this.width/2,this.height/2,this.height*0.05,"white",this.height*0.3,true));
         this.start();
 
     }

@@ -9,7 +9,7 @@ class AcGameObject
         this.timedelta = 0; //当前帧距离上一帧的时间间隔,单位毫秒
         //因为可能不同浏览器的刷新频率不同，每次刷新都执行update的话，
         //不同浏览器实际的刷新频率就不一样，因此需要使用时间来衡量
-        console.log("调用了AcGameObject的构造函数")
+        //console.log("调用了AcGameObject的构造函数")
     }
 
     start()  //只会在第一帧执行
@@ -22,7 +22,7 @@ class AcGameObject
         //console.log('update...')
     }
 
-    on_destroy()  //删掉物体前执行,例如给对手加分等操作
+    on_destory()  //删掉物体前执行,例如给对手加分等操作
     {
 
     }
@@ -32,7 +32,7 @@ class AcGameObject
         for (let i=0;i<AC_GAME_OBJECT.length;i++)
         {//js里最好用3个等号，表示全等
             if (AC_GAME_OBJECT[i]===this){
-                AC_GAME_OBJECT.split(i,1); //从下标i开始，删除一个
+                AC_GAME_OBJECT.splice(i,1); //从下标i开始，删除一个
                 break;
             }
         }
