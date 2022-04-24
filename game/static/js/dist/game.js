@@ -329,7 +329,7 @@ class Player extends AcGameObject{
 
     update(){
         this.spend_time += this.timedelta / 1000;
-        if (this.spend_time > 2 && Math.random() < 1 / 180.0 )
+        if (!this.is_me && this.spend_time > 2 && Math.random() < 1 / 180.0 )
         {
             var player = this.playground.players[0];
             if (this === player)
@@ -337,9 +337,12 @@ class Player extends AcGameObject{
                 player = this.playground.players[this.playground.players.length-1];
             }
             //每次总选择players[0]
+            if (player !== this)
+            {
             let tx = player.x;
             let ty = player.y;
             this.shoot_fireball(tx,ty);
+            }
         }
         if (this.damage_speed > 10 )
         {
@@ -373,7 +376,7 @@ class Player extends AcGameObject{
             }
         }
         this.render();
-        
+
     }
 
 
