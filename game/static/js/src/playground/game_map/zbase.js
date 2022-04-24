@@ -9,7 +9,7 @@ class GameMap extends AcGameObject //继承自基类
         this.ctx.canvas.width =this.playground.width;
         this.ctx.canvas.height =this.playground.height;
         this.playground.$playground.append(this.$canvas);
-        console.log("GameMap");
+        //console.log("GameMap");
     }
 
     start()
