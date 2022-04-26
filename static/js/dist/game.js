@@ -259,14 +259,15 @@ class Player extends AcGameObject{
             return false;
         });
         this.playground.game_map.$canvas.mousedown(function(e){
+            const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 1){
                 if (outer.cur_skill === "fireball"){
                     // console.log("fireballand e==1")
-                    outer.shoot_fireball(e.clientX,e.clientY);
+                    outer.shoot_fireball(e.clientX-rect.left,e.clientY-rect.top);
                     outer.cur_skill=null;
                 }
                 else{
-                    outer.move_to(e.clientX,e.clientY);
+                    outer.move_to(e.clientX-rect.left,e.clientY-rect.top);
                 }
             }
         });
@@ -461,24 +462,10 @@ class AcGamePlayGround
 {
     constructor(root)
     {
-        this.root =root;
+        this.root = root;
         this.$playground = $(`<div class="ac_game_playground"></div>`);
         this.root.$ac_game.append(this.$playground);
-        //this.hide();
-        //console.log(this.$playground.width());
-        //console.log(this.$playground.height());
-        this.width = this.$playground.width();
-        this.height = this.$playground.height();
-        this.game_map = new GameMap(this);
-        this.players = [];
-        this.players.push(new Player(this,this.width/2,this.height/2,this.height*0.05,"white",this.height*0.2,true));
-        
-        //添加其他玩家
-        for (let i=0;i<5;i++){
-            this.players.push(new Player(this,this.width/2,this.height/2,this.height*0.05,this.get_random_color(),this.height*0.2,false));
-        }
-        this.start();
-
+        this.hide();
     }
     get_random_color(){
         let colors = ["blue","red","orange","pink","green","yellow"];
@@ -492,6 +479,18 @@ class AcGamePlayGround
     show()
     {
         this.$playground.show();
+        //console.log(this.$playground.width());
+        //console.log(this.$playground.height());
+        this.width = this.$playground.width();
+        this.height = this.$playground.height();
+        this.game_map = new GameMap(this);
+        this.players = [];
+        this.players.push(new Player(this,this.width/2,this.height/2,this.height*0.05,"white",this.height*0.2,true));
+        //添加其他玩家
+        for (let i=0;i<5;i++){
+            this.players.push(new Player(this,this.width/2,this.height/2,this.height*0.05,this.get_random_color(),this.height*0.2,false));
+        }
+        this.start();
     }
 
     hide()
@@ -507,7 +506,7 @@ export class AcGame
         this.id =id;
         //$()表示这个是一个html元素，JQuery可通过'#'+id来找到对应id的html元素
         this.$ac_game = $('#'+this.id);
-//        this.menu = new AcGameMenu(this);
+        this.menu = new AcGameMenu(this);
         this.playground = new AcGamePlayGround(this);
     }
 }
