@@ -1,3 +1,62 @@
+class Settings{
+
+    constructor(root){
+        // root 是 AcGame
+        this.root = root;
+        //和 getinfo函数那里对应
+        this.platform = "WEB";
+        if (this.root.acwingos){
+            this.platform = "ACAPP"
+        }
+        this.getinfo();
+    }
+    
+    register(){
+
+    }
+    
+    login(){
+
+    }
+    
+    getinfo(){
+        let outer = this;
+        $.ajax({
+            //url
+            url:"https://app1854.acapp.acwing.com.cn/settings/getinfo/",
+            //请求类型
+            type:"GET",
+            //携带数据
+            data:{
+                platform:outer.platform
+            },
+            //调用成功的回调函数,请求返回的内容在resp中
+            success:function(resp){
+                console.log(resp);
+                if (resp.result=="success"){
+                    outer.hide();
+                    outer.root.menu.show();
+                }
+                else{
+                    //弹出登录界面
+                    outer.login();
+                }
+            }
+        });
+    }
+
+    start(){
+        this.getinfo();
+    }
+
+    hide(){
+
+    }
+    
+    show(){
+
+    }
+}
 class AcGameMenu
 {
     constructor(root)
@@ -18,6 +77,7 @@ class AcGameMenu
                 </div>
             </div>
             `);
+        this.hide();
         this.root.$ac_game.append(this.$menu);
         this.$single_mode = this.$menu.find('.ac_game_menu_single_mode');
         this.$multi_mode = this.$menu.find(".ac_game_menu_multi_mode");
@@ -501,10 +561,13 @@ class AcGamePlayGround
 }
 export class AcGame
 {
-    constructor(id)
+    constructor(id,acwingos)
     {
+        //如果在acwing里打开,就会传这个参数,提供了一些接口,也可以判断是在那里执行的
+        this.acwingos = acwingos;
         this.id =id;
         //$()表示这个是一个html元素，JQuery可通过'#'+id来找到对应id的html元素
+        this.settings = new Settings(this);
         this.$ac_game = $('#'+this.id);
         this.menu = new AcGameMenu(this);
         this.playground = new AcGamePlayGround(this);
