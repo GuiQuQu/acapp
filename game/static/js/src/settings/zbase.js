@@ -15,9 +15,27 @@ class Settings{
 `<div class = ac_game_settings>
         <div class = "ac_game_settings_login">
             <div class="ac_game_settings_title">登录</div>
-            <div class="ac_game_setings_username">
+            <div class="ac_game_settings_username">
                 <div class="ac_game_settings_item">
-                    <input type="text",placeholder="用户名">
+                    <input type="text" placeholder="用户名">
+                </div>
+                <div class="ac_game_settings_password">
+                    <div class="ac_game_settings_item">
+                        <input type="password",placeholder="密码">
+                    </div>
+                <div>
+                <div class="ac_game_settings_commit">
+                    <div class="ac_game_settings_item">
+                        <button>登录</button>
+                    </div>
+                <div>
+                <div class="ac_game_settings_error_message">用户名或密码错误</div>
+                <div class="ac_game_settings_option">注册</div>
+                <br>
+                <div class="ac_game_settings_acwing">
+                    <img width = 30px src="https://app1854.acapp.acwing.com.cn/static/image/settings/acwing_logo.png">
+                    <br>
+                    <div>AcWing一键登录</div>
                 </div>
             </div>
 

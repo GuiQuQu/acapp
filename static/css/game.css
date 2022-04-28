@@ -1,3 +1,121 @@
+.ac_game_settings{
+    width:100%;
+    height:100%;
+    background-image:url("/static/image/menu/seika.jpg");
+    background-size: 100% 100%
+}
+
+.ac_game_settings_login{
+    height:45vh;
+    width:15vw;
+    /*让矩形框居中*/
+    position:relative;
+    top:50%;
+    left:50%; 
+    transform:translate(-50%,-50%); /*修改这个矩形框的锚点到矩形中心*/
+    background-color:rgba(0,0,0,0.4);
+    border-radius:5px; /*矩形园角*/
+}
+
+.ac_game_settings_title{
+    color:white;
+    font-size:3vh; /*3%的高度*/
+    text-align:center;
+    height:7vh;
+    padding-top:2vh;  /*距离上方有一定距离*/
+    margin-bottom:0vh;  /*距离下方有一定距离*/
+}
+
+.ac_game_settings_username{
+    display:block;
+    height:7vh;
+}
+
+.ac_game_settings_password
+{
+    display:block;
+    height:7vh;
+}
+
+.ac_game_settings_commit{
+    display:block;
+    height;7vh;
+}
+
+.ac_game_settings_error_message{
+    color:red;
+    font-size:0.8vh;
+    display:inline;
+    float:left; /*左对齐*/
+    padding-left:1vw;
+}
+
+.ac_game_settings_option {
+    color:white;
+    font-size:0.8vh;
+    display:inline; /*一行显示*/
+    float:right;
+    padding-right:1vw;
+    cursor:pointer; /*划过变小手*/
+}
+.ac_game_settings_acwing {
+    display:block;
+    height:7vh;
+}
+
+.ac_game_settings_item{
+    width:100%;
+    height:100%;
+}
+.ac_game_settings_item > input{
+    width:90%;
+    line-height:3.5vh; /*行高*/
+    position:relative;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%); /*修改这个矩形框的锚点到矩形中心*/
+}
+
+.ac_game_settings_item > button{
+    color:white;
+    background-color:#4CAF50;
+    width:90%;
+    line-height:3vh; /*行高*/
+    position:relative;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%); /*修改这个矩形框的锚点到矩形中心*/
+    border-radius:5px;
+}
+
+.ac_game_settings_acwing > img {
+    position:relative;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%); /*修改这个矩形框的锚点到矩形中心*/
+    cursor:pointer;
+    display:block;
+}
+
+.ac_game_settings_acwing > div {
+    color:white;
+    font-size:2vh;
+    text-align:center;
+    cursor:pointer;
+    display:block;
+}
+.ac_game_settings_register{
+    height:50vh;
+    width:15vw;
+    /*让矩形框居中*/
+    position:relative;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%); /*修改这个矩形框的锚点到矩形中心*/
+    background-color:rgba(0,0,0,0.5);
+}
+
+
 .ac_game_menu{
     width:100%;
     height:100%;

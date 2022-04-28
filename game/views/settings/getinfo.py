@@ -2,11 +2,11 @@ from django.http import JsonResponse
 from game.models.player.player import Player
 
 def getinfo_acapp(request):
-    //acwing app端无脑返回登录,不做检测
+    #acwing app端无脑返回登录,不做检测
     player = Player.objects.all()[0]
     return JsonResponse({
         'result':'success',
-        'user':player.user.username,
+        'username':player.user.username,
         'photo':player.photo,
         })
 
