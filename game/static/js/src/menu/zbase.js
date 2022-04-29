@@ -13,7 +13,7 @@ class AcGameMenu
                     <br>
                     <div class ="ac_game_menu_item ac_game_menu_multi_mode">多人模式</div>
                     <br>
-                    <div class ="ac_game_menu_item ac_game_menu_settings">设置</div>
+                    <div class ="ac_game_menu_item ac_game_menu_settings">退出</div>
                     <br>
                 </div>
             </div>
@@ -45,6 +45,7 @@ class AcGameMenu
         });
         this.$settings.click(function(){
             console.log("click settings");
+            outer.root.settings.log_out_on_remote();
         });
     }
 
