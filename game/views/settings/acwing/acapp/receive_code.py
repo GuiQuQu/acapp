@@ -75,7 +75,7 @@ def receive_code(request):
     # login(request,user)
     return JsonResponse({
             "result":"success",
-            "username":player.username,
+            "username":player.user.username,
             "photo":player.photo,
             })
     
