@@ -622,8 +622,14 @@ class Settings{
     }
 
     start(){
-        this.getinfo();
+        if (this.platform ==="ACAPP"){
+            //console.log("enter getinfo acapp")
+            this.getinfo_acapp();
+        }else
+        {
+        this.getinfo_web();
         this.add_listening_events();
+        }
     }
 
     add_listening_events(){
@@ -750,8 +756,39 @@ class Settings{
         this.$login.show();
         this.$register.hide();
     }
+
+    getinfo_acapp(){
+        let outer = this;
+        //console.log("ener ajax");
+        $.ajax({
+            url:"https://app1854.acapp.acwing.com.cn/settings/acwing/acapp/apply_code/",
+            type:"GET",
+            success:function(resp){
+                if (resp.result ==="success"){
+                    outer.acapp_login(resp.appid,resp.redirect_uri,resp.scope,resp.state)
+                }
+            }
+        });
+    }
     
-    getinfo(){
+    acapp_login(appid,redirect_uri,scope,state){
+        let outer = this;
+        //console.log("use acwingos");
+        //console.log(state)
+        this.root.acwingos.api.oauth2.authorize(appid, redirect_uri, scope, state, function(resp){
+            //resp的返回值是receive_code 的返回值
+            console.log(resp)
+            if (resp.result==="success"){
+                //console.log("enter menu main")
+                outer.username = resp.username;
+                outer.photo = resp.photo;
+                outer.hide();
+                outer.root.menu.show();
+            }
+        });
+    }
+    
+    getinfo_web(){
         let outer = this;
         $.ajax({
             //url
