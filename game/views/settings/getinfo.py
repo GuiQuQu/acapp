@@ -18,7 +18,8 @@ def getinfo_web(request):
             {'result':'not login'},
                 )
     else:
-        player = Player.objects.all()[0]
+        #查询操作
+        player = Player.objects.get(user = user)
         return JsonResponse({
             'result':'success',
             'user':player.user.username,

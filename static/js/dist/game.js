@@ -615,7 +615,9 @@ class Settings{
         this.$register_to_login = this.$register.find(".ac_game_settings_option");
 
         this.$register.hide();
-
+        
+        this.$acwing_login_img = this.$settings.find(".ac_game_settings_acwing > img");
+        this.$acwing_login_div = this.$settings.find(".ac_game_settings_acwing > div");
         this.start();
     }
 
@@ -626,8 +628,16 @@ class Settings{
 
     add_listening_events(){
         //绑定监听函数
+        let outer = this;
         this.add_listening_events_login();
         this.add_listening_events_register();
+
+        this.$acwing_login_img.click(function(){
+            outer.acwing_login();
+        });
+        this.$acwing_login_div.click(function(){
+            outer.acwing_login();
+        });
     }
 
     add_listening_events_login(){
@@ -639,6 +649,22 @@ class Settings{
             outer.log_in_on_remote();
         });
     }
+
+    acwing_login(){
+        console.log("click acwing login");
+        $.ajax({
+            url:"https://app1854.acapp.acwing.com.cn/settings/acwing/web/apply_code/",
+            type: "GET",
+            success:function(resp){
+                console.log(resp)
+                if (resp.result==="success"){
+                        //重定向页面
+                        window.location.replace(resp.apply_code_url);
+                }
+            }
+        });
+    }
+    
     log_in_on_remote(){
     //在远程服务器上登录
         let outer = this;
