@@ -38,10 +38,11 @@ class AcGameMenu
         this.$single_mode.click(function(){
             //属于js强制转换了，浏览器无法返回
             outer.hide();
-            outer.root.playground.show();
+            outer.root.playground.show("single-mode");
         });
         this.$multi_mode.click(function(){
-            console.log("click multi mode");
+            outer.hide();
+            outer.root.playground.show("multi-mode");
         });
         this.$settings.click(function(){
             console.log("click settings");
@@ -72,8 +73,19 @@ class AcGameObject
         //因为可能不同浏览器的刷新频率不同，每次刷新都执行update的话，
         //不同浏览器实际的刷新频率就不一样，因此需要使用时间来衡量
         //console.log("调用了AcGameObject的构造函数")
+        this.uuid = this.create_uuid();
+        console.log(this.uuid);
     }
-
+    //uuid 来表示这个物品的唯一的id,这样在多人联机对战的时候就可以通过uuid确认这个谁发的消息,
+    //这里保证uuid唯一的逻辑是随机8位数,重复的概率很低
+    create_uuid(){
+        let res ="";
+        for (let i =0;i<8;i++){
+            let x = parseInt(Math.floor(Math.random() * 10));
+            res += x;
+        }
+        return res;
+    }
     start()  //只会在第一帧执行
     {
 
@@ -102,11 +114,11 @@ class AcGameObject
     }
 }
 
-let last_timestamp=0;
+let last_timestamp = 0;
 let AC_GAME_ANIMATION = function(timestamp){
     //timestamp 当前时间戳
     //console.log(AC_GAME_OBJECT.length);
-    for (let i = 0;i<AC_GAME_OBJECT.length;i++)
+    for (let i = 0;i < AC_GAME_OBJECT.length ; i ++)
     {
         let obj = AC_GAME_OBJECT[i];
         if (!obj.has_called_start){
@@ -207,7 +219,7 @@ class Particle extends AcGameObject{
     }
 }
 class Player extends AcGameObject{
-    constructor(playground,x,y,radius,color,speed,is_me)
+    constructor(playground,x,y,radius,color,speed,player_type)
     {
         super();
         //console.log("player")
@@ -225,11 +237,11 @@ class Player extends AcGameObject{
         this.radius = radius;
         this.color = color;
         this.speed = speed; //speed 使用地图高度的百分比表示
-        this.is_me = is_me;
+        this.player_type = player_type;
         this.eps = 0.01; // 绝对 改 相对
         this.spend_time = 0;
         this.cur_skill =null;
-        if (this.is_me){
+        if (this.player_type !== "robot"){
             this.img = new Image();
             this.img.src = this.playground.root.settings.photo;
         }
@@ -237,10 +249,10 @@ class Player extends AcGameObject{
 
     start()
     {
-        if (this.is_me){
+        if (this.player_type === "me"){
             this.add_listening_events();
         }
-        else{
+        else if (this.player_type === "robot"){
             //绝对 to 相对
             let scale = this.playground.scale;
             let tx = Math.random() * this.playground.width / scale;
@@ -352,10 +364,12 @@ class Player extends AcGameObject{
         this.render();
 
     }
-
+ //    this.ctx.fillStyle = "rgba(0,0,0,0.2)";
+          //  this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
+       
     update_move(){
         this.spend_time += this.timedelta / 1000;
-        if (!this.is_me && this.spend_time > 2 && Math.random() < 1 / 180.0 )
+        if (this.player_type==="robot" && this.spend_time > 2 && Math.random() < 1 / 180.0 )
         {
             //var player = this.playground.players[0];
             //if (this === player)
@@ -363,7 +377,8 @@ class Player extends AcGameObject{
             //每次总选择players[0]
             //if (player !== this)
             //{
-            //   let tx = player.x;
+            //   let tx = p //    this.ctx.fillStyle = "rgba(0,0,0,0.2)";
+          //  this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
             //    let ty = player.y;
             //    this.shoot_fireball(tx,ty);
             //}
@@ -388,17 +403,19 @@ class Player extends AcGameObject{
                 this.move_length = 0;
                 this.vx = 0;
                 this.vy = 0;
-                if (!this.is_me)
+                if (this.player_type === "robot")
                 {
                     let tx = Math.random() * this.playground.width / scale;
                     let ty = Math.random() * this.playground.height / scale;
                     this.move_to(tx,ty);
                 }
             }
-            else
+            else //    this.ctx.fillStyle = "rgba(0,0,0,0.2)";
+          //  this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
+       
             {
             //this.ctx.fillStyle = "rgba(0,0,0,0.1)";
-                let moved = Math.min(this.move_length,this.speed*this.timedelta/1000);
+                let moved = Math.min(this.move_length,this.speed * this.timedelta/1000);
                 this.x += this.vx * moved;
                 this.y += this.vy * moved;
                 this.move_length -= moved;
@@ -409,7 +426,7 @@ class Player extends AcGameObject{
 
     render(){
         let scale = this.playground.scale;
-        if (this.is_me){
+        if (this.player_type !== "robot"){
             this.ctx.save();
             this.ctx.beginPath();
             this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
@@ -545,6 +562,33 @@ class FireBall extends AcGameObject{
         this.ctx.fill();
     }
 }
+class MultiPlayerSocket{
+
+    constructor(playground){
+        this.playground = playground;
+        //创建一个WebSocket连接,后面的/wss/multiplayer 是自己实现的路由
+        this.ws = new WebSocket("wss://app1854.acapp.acwing.com.cn/wss/multiplayer/");
+        this.uuid = -1;
+        this.start();
+    }
+
+    start(){
+    }
+
+    send_create_player(){
+        let outer = this;
+        //利用ws想服务器发送请求
+        this.ws.send(JSON.stringify({
+        "message":"create player",
+        "uuid":outer.uuid,
+        }));
+    }
+
+    receiv_create_player(){
+
+    }
+}
+
 class AcGamePlayGround
 {
     constructor(root)
@@ -555,10 +599,12 @@ class AcGamePlayGround
         this.hide();
         this.start();
     }
+
     get_random_color(){
         let colors = ["blue","red","orange","pink","green","yellow"];
         return colors[Math.floor(Math.random()* colors.length)];
     }
+
     start()
     {
         let outer = this;
@@ -566,6 +612,7 @@ class AcGamePlayGround
             outer.resize();
         });
     }
+
     resize(){
         console.log("resize");
         //把窗口大小放缩到当前窗口大小,并且保证长宽比为16：9
@@ -578,21 +625,35 @@ class AcGamePlayGround
         if (this.game_map) this.game_map.resize();
         // 在拖动窗口的时候,界面上的元素都需要随着窗口大小变化而变化，因此需要一个基准,选择height作为单位1,然后游戏内的元素都是用相对距离
     }
-    show()
+
+    show(mode)
     {
+        let outer = this;
         this.$playground.show();
         //console.log(this.$playground.width());
         //console.log(this.$playground.height());
-        this.resize();
+
         //this.width = this.$playground.width();
         //this.height = this.$playground.height();
         this.game_map = new GameMap(this);
+        this.resize();
         this.players = [];
         // 绝对 to 相对
-        this.players.push(new Player(this,this.width/2 / this.scale , this.height/ 2 / this.scale , this.height / this.scale * 0.05 ,"white",this.height / this.scale * 0.2,true));
+        this.players.push(new Player(this,this.width/2 / this.scale , this.height/ 2 / this.scale , this.height / this.scale * 0.05 ,"white",this.height / this.scale * 0.2,"me"));
         //添加其他玩家
-        for (let i=0;i<5;i++){
-            this.players.push(new Player(this,this.width / 2 /this.scale,this.height / 2 / this.scale, this.height /this.scale * 0.05,this.get_random_color(),this.height / this.scale * 0.2,false));
+        if (mode === "single-mode"){
+            for (let i=0;i<5;i++){
+                this.players.push(new Player(this,this.width / 2 /this.scale,this.height / 2 / this.scale, this.height /this.scale * 0.05,this.get_random_color(),this.height / this.scale * 0.2,"robot"));
+            }
+        }
+        else if (mode === "multi-mode"){
+            //声明了该类(MultiPlayerSocket)之后,会为我们创建WebSocket连接
+            this.mps = new MultiPlayerSocket(this);
+            this.mps.uuid = this.players[0].uuid;
+            // 链接创建成功之后的回调函数
+            this.mps.ws.onopen = function (){
+                outer.mps.send_create_player();
+            };
         }
     }
 

@@ -1,5 +1,5 @@
 class Player extends AcGameObject{
-    constructor(playground,x,y,radius,color,speed,is_me)
+    constructor(playground,x,y,radius,color,speed,player_type)
     {
         super();
         //console.log("player")
@@ -17,11 +17,11 @@ class Player extends AcGameObject{
         this.radius = radius;
         this.color = color;
         this.speed = speed; //speed 使用地图高度的百分比表示
-        this.is_me = is_me;
+        this.player_type = player_type;
         this.eps = 0.01; // 绝对 改 相对
         this.spend_time = 0;
         this.cur_skill =null;
-        if (this.is_me){
+        if (this.player_type !== "robot"){
             this.img = new Image();
             this.img.src = this.playground.root.settings.photo;
         }
@@ -29,10 +29,10 @@ class Player extends AcGameObject{
 
     start()
     {
-        if (this.is_me){
+        if (this.player_type === "me"){
             this.add_listening_events();
         }
-        else{
+        else if (this.player_type === "robot"){
             //绝对 to 相对
             let scale = this.playground.scale;
             let tx = Math.random() * this.playground.width / scale;
@@ -144,10 +144,12 @@ class Player extends AcGameObject{
         this.render();
 
     }
-
+ //    this.ctx.fillStyle = "rgba(0,0,0,0.2)";
+          //  this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
+       
     update_move(){
         this.spend_time += this.timedelta / 1000;
-        if (!this.is_me && this.spend_time > 2 && Math.random() < 1 / 180.0 )
+        if (this.player_type==="robot" && this.spend_time > 2 && Math.random() < 1 / 180.0 )
         {
             //var player = this.playground.players[0];
             //if (this === player)
@@ -155,7 +157,8 @@ class Player extends AcGameObject{
             //每次总选择players[0]
             //if (player !== this)
             //{
-            //   let tx = player.x;
+            //   let tx = p //    this.ctx.fillStyle = "rgba(0,0,0,0.2)";
+          //  this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
             //    let ty = player.y;
             //    this.shoot_fireball(tx,ty);
             //}
@@ -180,17 +183,19 @@ class Player extends AcGameObject{
                 this.move_length = 0;
                 this.vx = 0;
                 this.vy = 0;
-                if (!this.is_me)
+                if (this.player_type === "robot")
                 {
                     let tx = Math.random() * this.playground.width / scale;
                     let ty = Math.random() * this.playground.height / scale;
                     this.move_to(tx,ty);
                 }
             }
-            else
+            else //    this.ctx.fillStyle = "rgba(0,0,0,0.2)";
+          //  this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
+       
             {
             //this.ctx.fillStyle = "rgba(0,0,0,0.1)";
-                let moved = Math.min(this.move_length,this.speed*this.timedelta/1000);
+                let moved = Math.min(this.move_length,this.speed * this.timedelta/1000);
                 this.x += this.vx * moved;
                 this.y += this.vy * moved;
                 this.move_length -= moved;
@@ -201,7 +206,7 @@ class Player extends AcGameObject{
 
     render(){
         let scale = this.playground.scale;
-        if (this.is_me){
+        if (this.player_type !== "robot"){
             this.ctx.save();
             this.ctx.beginPath();
             this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
