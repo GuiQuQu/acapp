@@ -52,9 +52,9 @@ def receive_code(request):
     # 就无法获取photo
     # 如果要删除的可以直接从User表删,因为外键的绑定关系是CASCADE，如果被参照的内容不在了，就会直接删除使用了这个被参照内容的条目
     while User.objects.filter(username = username).exists():
-        print(username,end ="   ")
+        #print(username,end ="   ")
         username += str(randint(0,9))
-        print(username)
+        #print(username)
     
     user = User.objects.create(username = username)
     Player.objects.create(user = user,photo = photo,openid = openid)

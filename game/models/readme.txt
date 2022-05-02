@@ -5,7 +5,7 @@ models文件夹管理数据库数据,我们创建的数据库的表就放在这�
 python3 manage.py createsuperuser 创建超级用户
 可以访问/admin来管理用户
 
-python3 manage.oy changepassword admin 修改用户admin的密码
+python3 manage.py changepassword admin 修改用户admin的密码
 如果我们在这里创建了并注册名为player的数据表,就可以在/admin那里看到
 
 python3 manage.py shell 可以调出交互式python,里面有自动补全

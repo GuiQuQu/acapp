@@ -15,7 +15,13 @@ class GameMap extends AcGameObject //继承自基类
     start()
     {
     }
-
+    resize(){
+        this.ctx.canvas.width = this.playground.width;
+        this.ctx.canvas.height =this.playground.height;
+        //每次改变完大小之后,屏幕会出现渐变的闪的效果,需要把这个效果处理掉
+        this.ctx.fillStyle = "rgba(0,0,0,1)"; //强行涂一层不透明的蒙版,用黑的盖掉掉原来透明渐变的
+        this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
+    }
     update()
     {
         this.render();

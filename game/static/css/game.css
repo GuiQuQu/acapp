@@ -138,8 +138,15 @@
     width:100%;
     height:100%;
     user-select:none;
+    background-color:grey;
 }
 
+.ac_game_playground > canvas {
+    position:relative;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%); /*修改这个矩形框的锚点到矩形中心*/
+}
 .ac_game_menu_item
 {
    color:black;
@@ -153,6 +160,7 @@
    letter-spacing:0.5vw; /*字间距*/
    cursor:pointer; /*鼠标悬停样式,变成手形*/
 }
+
 /*控制鼠标悬停时的效果*/
 .ac_game_menu_item:hover
 {

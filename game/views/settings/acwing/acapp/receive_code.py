@@ -35,7 +35,7 @@ def receive_code(request):
             "secret":"343ef1c1e2f24093920e0079336ae1ad",
             "code":code,
             }
-    print(params)
+    #print(params)
     access_token_res = requests.get(apply_access_token_url,params = params).json()
     # print(access_token_res)
     # 一般正常都会申请成功,申请失败会报KeyError
@@ -66,9 +66,9 @@ def receive_code(request):
     # 就无法获取photo
     # 如果要删除的可以直接从User表删,因为外键的绑定关系是CASCADE，如果被参照的内容不在了，就会直接删除使用了这个被参照内容的条目
     while User.objects.filter(username = username).exists():
-        print(username,end ="   ")
+        #print(username,end ="   ")
         username += str(randint(0,9))
-        print(username)
+        #print(username)
     
     user = User.objects.create(username = username)
     player = Player.objects.create(user = user,photo = photo,openid = openid)
