@@ -145,7 +145,7 @@ class Settings{
             url:"https://app1854.acapp.acwing.com.cn/settings/acwing/web/apply_code/",
             type: "GET",
             success:function(resp){
-                console.log(resp)
+                // console.log(resp)
                 if (resp.result==="success"){
                         //重定向页面
                         window.location.replace(resp.apply_code_url);
@@ -168,7 +168,7 @@ class Settings{
                 password:password,
             },
             success:function(resp){
-                console.log(resp);
+                // console.log(resp);
                 if (resp.result==="success"){
                     location.reload(); //刷新页面
                 }else{
@@ -177,23 +177,26 @@ class Settings{
             }
         });
     }
-    
+
     log_out_on_remote(){
-    //在远程服务器上登出
-        if (this.platform === "ACAPP") return false;
-        $.ajax({
-            url:"https://app1854.acapp.acwing.com.cn/settings/logout/",
-            type:"GET",
-            success:function(resp){
-                console.log(resp);
-                if (resp.result === "success"){
-                    location.reload();
+        //在远程服务器上登出
+        if (this.platform === "ACAPP") {
+            this.root.acwingos.api.window.close();
+        }
+        else{
+            $.ajax({
+                url:"https://app1854.acapp.acwing.com.cn/settings/logout/",
+                type:"GET",
+                success:function(resp){
+                    // console.log(resp);
+                    if (resp.result === "success"){
+                        location.reload();
+                    }
                 }
-            }
-        });
+            });}
     }
     register_on_remote(){
-    //web端,在远程服务器上注册
+        //web端,在远程服务器上注册
         let outer = this;
         let username = this.$register_username.val(); //获取input元素的值
         let password = this.$register_password.val();
@@ -208,24 +211,24 @@ class Settings{
                 password_comfirm:password_comfirm
             },
             success:function(resp){
-                console.log(resp);
+                // console.log(resp);
                 if (resp.result==="success"){
                     location.reload(); //刷新页面
                 }else{
-                        outer.$register_error_message.html(resp.result) // 显示错误信息
+                    outer.$register_error_message.html(resp.result) // 显示错误信息
                 }
             }
         });
-   
+
     }
 
     add_listening_events_register(){
         let outer = this;
         this.$register_to_login.click(function(){
-                outer.login();
+            outer.login();
         });
         this.$register_commit.click(function(){
-                outer.register_on_remote();
+            outer.register_on_remote();
         });
     }
 
@@ -233,7 +236,7 @@ class Settings{
         this.$login.hide();
         this.$register.show();
     }
-    
+
     login(){
         //console.log("enter show");
         this.$login.show();
@@ -253,14 +256,14 @@ class Settings{
             }
         });
     }
-    
+
     acapp_login(appid,redirect_uri,scope,state){
         let outer = this;
         //console.log("use acwingos");
         //console.log(state)
         this.root.acwingos.api.oauth2.authorize(appid, redirect_uri, scope, state, function(resp){
             //resp的返回值是receive_code 的返回值
-            console.log(resp)
+            //console.log(resp)
             if (resp.result==="success"){
                 //console.log("enter menu main")
                 outer.username = resp.username;
@@ -270,7 +273,7 @@ class Settings{
             }
         });
     }
-    
+
     getinfo_web(){
         let outer = this;
         $.ajax({
@@ -284,7 +287,7 @@ class Settings{
             },
             //调用成功的回调函数,请求返回的内容在resp中
             success:function(resp){
-                console.log(resp);
+                //console.log(resp);
                 if (resp.result=="success"){
                     outer.hide();
                     outer.username = resp.username;
@@ -295,7 +298,7 @@ class Settings{
                     //弹出登录界面
                     //console.log("enter login")
                     outer.login();
-                    
+
                 }
             }
         });
@@ -305,7 +308,7 @@ class Settings{
     hide(){
         this.$settings.hide();
     }
-    
+
     show(){
         this.$settings.show();
     }

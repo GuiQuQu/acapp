@@ -14,9 +14,10 @@ class FireBall extends AcGameObject{
         this.move_length = move_length;
         this.damage = damage;
         this.eps = 0.01; //绝对 to 相对
-        //console.log(x,y,radius,vx,vy,color,speed,move_length);
     }
-    start(){    this.spend_time += this.timedelta / 1000;
+    start()
+    {
+        this.spend_time += this.timedelta / 1000;
         if (!this.is_me && this.spend_time > 2 && Math.random() < 1 / 180.0 )
         {
             var player = this.playground.players[0];
@@ -63,31 +64,44 @@ class FireBall extends AcGameObject{
                 this.move_length -= moved;
             }
         }
-
-    
     }
-    update(){
-        if (this.move_length < this.eps){
+
+    update()
+    {
+        if (this.move_length < this.eps)
+        {
             this.destroy();
             return false;
         }
+        this.update_move();
+        // 每一个窗口只为非敌人球球判断碰撞,其他窗口里自己发射的炮弹不判断碰撞,只是动画
+        if (this.player.player_type !== "enemy")
+        {
+            this.update_attack();
+        }
+        this.render();
+    }
+
+    update_move()
+    {
         let moved = Math.min(this.move_length,this.speed * this.timedelta / 1000);
         this.x += this.vx * moved;
         this.y += this.vy * moved;
         this.move_length -= moved;
-        
+    }
+
+    update_attack()
+    {
         //判断碰撞
         for (let i=0;i<this.playground.players.length;i++)
         {
             let player = this.playground.players[i];
-            //console.log(this.is_collision(player));
             if (player !==this.player && this.is_collision(player))
             {
                 this.attack(player);
+                break; //这样火球只会攻击一名玩家
             }
         }
-        this.render();
-        //console.log("fire ball");
     }
 
     get_dist(x,y,tx,ty)
@@ -96,7 +110,7 @@ class FireBall extends AcGameObject{
         let dy = ty-y;
         return Math.sqrt(dx * dx + dy * dy);
     }
-    
+
     is_collision(player)
     {
         return this.get_dist(this.x,this.y,player.x,player.y) < this.radius + player.radius;
@@ -106,14 +120,32 @@ class FireBall extends AcGameObject{
     {
         let angle = Math.atan2(player.y-this.y,player.x-this.x);
         player.is_attacked(angle,this.damage);
+        if (this.playground.mode === "multi-mode")
+        {
+            this.playground.mps.send_attack(player.uuid,player.x,player.y,angle,this.damage,this.uuid);
+        }
         this.destroy();
     }
+
     render(){
-        //console.log("fire ball update")
         let scale = this.playground.scale;
         this.ctx.beginPath();
         this.ctx.arc(this.x * scale,this.y * scale,this.radius * scale,0,Math.PI * 2,false);
         this.ctx.fillStyle = this.color;
         this.ctx.fill();
+    }
+
+    on_destroy()
+    {
+        let fireballs = this.player.fireballs;
+        for (let i = 0; i < fireballs.length ; i++)
+        {
+            let tfb = fireballs[i];
+            if (tfb==this)
+            {
+                fireballs.splice(i,1);
+                break;
+            }
+        }
     }
 }

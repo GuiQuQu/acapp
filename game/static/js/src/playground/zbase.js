@@ -9,7 +9,8 @@ class AcGamePlayGround
         this.start();
     }
 
-    get_random_color(){
+    get_random_color()
+    {
         let colors = ["blue","red","orange","pink","green","yellow"];
         return colors[Math.floor(Math.random()* colors.length)];
     }
@@ -22,8 +23,8 @@ class AcGamePlayGround
         });
     }
 
-    resize(){
-        console.log("resize");
+    resize()
+    {
         //把窗口大小放缩到当前窗口大小,并且保证长宽比为16：9
         this.width = this.$playground.width();
         this.height = this.$playground.height();
@@ -39,14 +40,11 @@ class AcGamePlayGround
     {
         let outer = this;
         this.$playground.show();
-        //console.log(this.$playground.width());
-        //console.log(this.$playground.height());
-
-        //this.width = this.$playground.width();
-        //this.height = this.$playground.height();
+        this.mode = mode;
         this.game_map = new GameMap(this);
         this.resize();
         this.players = [];
+        this.state == "waiting"  // waiting -> fighting -> over
         // 绝对 to 相对
         this.players.push(new Player(
             this,
@@ -60,8 +58,10 @@ class AcGamePlayGround
             this.root.settings.photo,
         ));
         //添加其他玩家
-        if (mode === "single-mode"){
-            for (let i=0;i<5;i++){
+        if (mode === "single-mode")
+        {
+            for (let i=0;i<5;i++)
+            {
                 this.players.push(new Player(
                     this,
                     this.width / 2 / this.scale,
@@ -73,12 +73,14 @@ class AcGamePlayGround
                 ));
             }
         }
-        else if (mode === "multi-mode"){
+        else if (mode === "multi-mode")
+        {
             //声明了该类(MultiPlayerSocket)之后,会为我们创建WebSocket连接
             this.mps = new MultiPlayerSocket(this);
             this.mps.uuid = this.players[0].uuid;
             // socket链接创建成功之后的回调函数
-            this.mps.ws.onopen = function (){
+            this.mps.ws.onopen = function ()
+            {
                 outer.mps.send_create_player(outer.root.settings.username,outer.root.settings.photo);
             };
         }

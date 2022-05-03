@@ -45,7 +45,7 @@ class AcGameMenu
             outer.root.playground.show("multi-mode");
         });
         this.$settings.click(function(){
-            console.log("click settings");
+            //console.log("click settings");
             outer.root.settings.log_out_on_remote();
         });
     }

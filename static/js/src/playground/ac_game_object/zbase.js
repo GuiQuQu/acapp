@@ -11,7 +11,7 @@ class AcGameObject
         //不同浏览器实际的刷新频率就不一样，因此需要使用时间来衡量
         //console.log("调用了AcGameObject的构造函数")
         this.uuid = this.create_uuid();
-        console.log(this.uuid);
+        //console.log(this.uuid);
     }
     //uuid 来表示这个物品的唯一的id,这样在多人联机对战的时候就可以通过uuid确认这个谁发的消息,
     //这里保证uuid唯一的逻辑是随机8位数,重复的概率很低

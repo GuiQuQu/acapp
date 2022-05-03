@@ -45,7 +45,7 @@ class AcGameMenu
             outer.root.playground.show("multi-mode");
         });
         this.$settings.click(function(){
-            console.log("click settings");
+            //console.log("click settings");
             outer.root.settings.log_out_on_remote();
         });
     }
@@ -74,7 +74,7 @@ class AcGameObject
         //不同浏览器实际的刷新频率就不一样，因此需要使用时间来衡量
         //console.log("调用了AcGameObject的构造函数")
         this.uuid = this.create_uuid();
-        console.log(this.uuid);
+        //console.log(this.uuid);
     }
     //uuid 来表示这个物品的唯一的id,这样在多人联机对战的时候就可以通过uuid确认这个谁发的消息,
     //这里保证uuid唯一的逻辑是随机8位数,重复的概率很低
@@ -221,9 +221,7 @@ class Particle extends AcGameObject{
 class Player extends AcGameObject{
     constructor(playground,x,y,radius,color,speed,player_type,username,photo)
     {
-        console.log(player_type,username,photo);
         super();
-        //console.log("player")
         this.playground = playground;
         this.ctx = this.playground.game_map.ctx;
         this.x = x;
@@ -242,20 +240,24 @@ class Player extends AcGameObject{
         this.eps = 0.01; // 绝对 改 相对
         this.spend_time = 0;
         this.cur_skill =null;
-        if (this.player_type !== "robot"){
+        this.fireballs = [];
+        if (this.player_type !== "robot")
+        {
             this.img = new Image();
-            // this.img.src = this.playground.root.settings.photo;
             this.img.src = photo;
         }
+        // 向服务器发送创建玩家的信息 {"event":create player,"uuid":uuid,"username":username,"photo":photod
         this.username = username;
     }
 
     start()
     {
-        if (this.player_type === "me"){
+        if (this.player_type === "me")
+        {
             this.add_listening_events();
         }
-        else if (this.player_type === "robot"){
+        else if (this.player_type === "robot")
+        {
             //绝对 to 相对
             let scale = this.playground.scale;
             let tx = Math.random() * this.playground.width / scale;
@@ -274,7 +276,6 @@ class Player extends AcGameObject{
     move_to(tx,ty)
     {
         this.move_length = this.get_dist(this.x,this.y,tx,ty);
-        //console.log(tx,ty);
         let angle =Math.atan2(ty-this.y,tx-this.x);
         this.vx =Math.cos(angle);
         this.vy =Math.sin(angle);
@@ -293,27 +294,41 @@ class Player extends AcGameObject{
             //绝对 to 相对
             let scale = outer.playground.scale;
             const rect = outer.ctx.canvas.getBoundingClientRect();
-            if (e.which === 1){
-                if (outer.cur_skill === "fireball"){
-                    // console.log("fireballand e==1")
-                    outer.shoot_fireball((e.clientX-rect.left) / scale,(e.clientY-rect.top) / scale);
-                    outer.cur_skill=null;
+            if (e.which === 1)
+            {
+
+                let tx = (e.clientX-rect.left) / scale;
+                let ty = (e.clientY-rect.top) / scale;
+                if (outer.cur_skill === "fireball")
+                {
+                    let fireball = outer.shoot_fireball(tx,ty);
+                    outer.cur_skill = null;
+                    if (outer.playground.mode === "multi-mode")
+                    {
+                        outer.playground.mps.send_shoot_fireball (tx,ty,fireball.uuid);
+                    }
                 }
             }
             else if (e.which === 3)
-                outer.move_to((e.clientX-rect.left) / scale,(e.clientY-rect.top) / scale);
+            {
+                let tx = (e.clientX-rect.left) / scale;
+                let ty = (e.clientY-rect.top) / scale;
+                outer.move_to(tx,ty);
+                if (outer.playground.mode === "multi-mode")
+                {
+                    outer.playground.mps.send_move_to(tx,ty);
+                }
+            }
         });
         $(window).keydown(function(e){
             if (e.which === 81){
                 outer.cur_skill ="fireball";
-                // console.log("outer.cur_skill=fireball")
                 return false;
             }
         });
     }
 
     shoot_fireball(tx,ty){
-        //console.log("shoot fireball",tx,ty);
         let x = this.x;
         let y = this.y;
         let scale = this.playground.scale;
@@ -324,9 +339,24 @@ class Player extends AcGameObject{
         let color = "orange";
         let speed = this.playground.height / scale * 0.5;
         let move_length = this.playground.height / scale * 0.8;
-        new FireBall(this.playground,this,x,y,radius,vx,vy,color,speed,move_length,this.playground.height / scale * 0.01);
+        let fireball = new FireBall(this.playground,this,x,y,radius,vx,vy,color,speed,move_length,this.playground.height / scale * 0.01);
+        this.fireballs.push(fireball);
+        return fireball;
     }
 
+    destroy_fireball(uuid)
+    {
+        for (let i=0;i<this.fireballs.length;i++)
+        {
+            let fireball = this.fireballs[i];
+            if (uuid === fireball.uuid)
+            {
+                fireball.destroy();
+                break;
+            }
+        }
+    }
+    
     is_attacked(angle,damage)
     {
         for (let i =0 ;i< 30 + Math.random() * 15 ;i++)
@@ -340,20 +370,13 @@ class Player extends AcGameObject{
             let color = this.color;
             let speed = this.speed * 0.5;
             let move_length = damage * 5 * Math.random();
-            //let move_length = this.playground.height / scale / 3 + this.playground.height/ scale / 4 * Math.random();
             new Particle(this.playground,x,y,radius,vx,vy,color,speed,move_length);
         }
         this.radius -= damage;
         if (this.radius<this.eps)
         {
+            //this.on_destroy();
             this.destroy();
-            for (let i = 0;i<this.playground.players.length;i++)
-            {
-                if (this === this.playground.players[i])
-                {
-                    this.playground.players.splice(i,1);
-                }
-            }
             return false;
         }
         this.damage_x = Math.cos(angle);
@@ -361,34 +384,40 @@ class Player extends AcGameObject{
         this.damage_speed = damage * 100;
         this.speed *= 0.8;
     }
-
-    update(){
+    
+    receive_attacked (x,y,angle,damage,ball_uuid,attacker)
+    {
+        attacker.destroy_fireball(ball_uuid);
+        this.x = x;
+        this.y = y;
+        this.is_attacked(angle,damage);
+    }
+    on_destroy()
+    {
+        for (let i = 0;i<this.playground.players.length;i++)
+        {
+            if (this === this.playground.players[i])
+            {
+                this.playground.players.splice(i,1);
+                break;
+            }
+        }
+    }
+    update()
+    {
         this.update_move();
         this.render();
-
     }
- //    this.ctx.fillStyle = "rgba(0,0,0,0.2)";
-          //  this.ctx.fillRect (0,0,this.ctx.canvas.width,this.ctx.canvas.height);
-       
-    update_move(){
+
+    update_move()
+    {
         this.spend_time += this.timedelta / 1000;
         if (this.player_type==="robot" && this.spend_time > 2 && Math.random() < 1 / 180.0 )
         {
-            //var player = this.playground.players[0];
-            //if (this === player)
-            //   player = this.playground.players[this.playground.players.length-1];
-            //每次总选择players[0]
-            //if (player !== this)
-            //{
-            //   let tx = p //    this.ctx.fillStyle = "rgba(0,0,0,0.2)";
-          //  this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
-            //    let ty = player.y;
-            //    this.shoot_fireball(tx,ty);
-            //}
             let target = Math.floor(Math.random() * this.playground.players.length);
             let player = this.playground.players[target];
             if (player!== this)
-                  this.shoot_fireball(player.x,player.y);
+                this.shoot_fireball(player.x,player.y);
         }
         if (this.damage_speed > this.eps )
         {
@@ -413,21 +442,18 @@ class Player extends AcGameObject{
                     this.move_to(tx,ty);
                 }
             }
-            else //    this.ctx.fillStyle = "rgba(0,0,0,0.2)";
-          //  this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
-       
+            else
             {
-            //this.ctx.fillStyle = "rgba(0,0,0,0.1)";
                 let moved = Math.min(this.move_length,this.speed * this.timedelta/1000);
                 this.x += this.vx * moved;
                 this.y += this.vy * moved;
                 this.move_length -= moved;
             }
-            //this.ctx.fillStyle = "rgba(0,0,0,0.1)";
         }
     }
 
-    render(){
+    render()
+    {
         let scale = this.playground.scale;
         if (this.player_type !== "robot"){
             this.ctx.save();
@@ -435,7 +461,12 @@ class Player extends AcGameObject{
             this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
             this.ctx.stroke();
             this.ctx.clip();
-            this.ctx.drawImage(this.img, (this.x - this.radius) * scale, (this.y - this.radius) * scale, this.radius * 2 * scale, this.radius * 2 * scale);
+            this.ctx.drawImage(
+                this.img,
+                (this.x - this.radius) * scale,
+                (this.y - this.radius) * scale,
+                this.radius * 2 * scale,
+                this.radius * 2 * scale);
             this.ctx.restore();
         }
         else{
@@ -443,7 +474,7 @@ class Player extends AcGameObject{
             this.ctx.arc(this.x * scale,this.y * scale,this.radius * scale,0,Math.PI * 2,false);
             this.ctx.fillStyle = this.color;
             this.ctx.fill();
-       }
+        }
     }
 }
 class FireBall extends AcGameObject{
@@ -462,9 +493,10 @@ class FireBall extends AcGameObject{
         this.move_length = move_length;
         this.damage = damage;
         this.eps = 0.01; //绝对 to 相对
-        //console.log(x,y,radius,vx,vy,color,speed,move_length);
     }
-    start(){    this.spend_time += this.timedelta / 1000;
+    start()
+    {
+        this.spend_time += this.timedelta / 1000;
         if (!this.is_me && this.spend_time > 2 && Math.random() < 1 / 180.0 )
         {
             var player = this.playground.players[0];
@@ -511,31 +543,44 @@ class FireBall extends AcGameObject{
                 this.move_length -= moved;
             }
         }
-
-    
     }
-    update(){
-        if (this.move_length < this.eps){
+
+    update()
+    {
+        if (this.move_length < this.eps)
+        {
             this.destroy();
             return false;
         }
+        this.update_move();
+        // 每一个窗口只为非敌人球球判断碰撞,其他窗口里自己发射的炮弹不判断碰撞,只是动画
+        if (this.player.player_type !== "enemy")
+        {
+            this.update_attack();
+        }
+        this.render();
+    }
+
+    update_move()
+    {
         let moved = Math.min(this.move_length,this.speed * this.timedelta / 1000);
         this.x += this.vx * moved;
         this.y += this.vy * moved;
         this.move_length -= moved;
-        
+    }
+
+    update_attack()
+    {
         //判断碰撞
         for (let i=0;i<this.playground.players.length;i++)
         {
             let player = this.playground.players[i];
-            //console.log(this.is_collision(player));
             if (player !==this.player && this.is_collision(player))
             {
                 this.attack(player);
+                break; //这样火球只会攻击一名玩家
             }
         }
-        this.render();
-        //console.log("fire ball");
     }
 
     get_dist(x,y,tx,ty)
@@ -544,7 +589,7 @@ class FireBall extends AcGameObject{
         let dy = ty-y;
         return Math.sqrt(dx * dx + dy * dy);
     }
-    
+
     is_collision(player)
     {
         return this.get_dist(this.x,this.y,player.x,player.y) < this.radius + player.radius;
@@ -554,15 +599,33 @@ class FireBall extends AcGameObject{
     {
         let angle = Math.atan2(player.y-this.y,player.x-this.x);
         player.is_attacked(angle,this.damage);
+        if (this.playground.mode === "multi-mode")
+        {
+            this.playground.mps.send_attack(player.uuid,player.x,player.y,angle,this.damage,this.uuid);
+        }
         this.destroy();
     }
+
     render(){
-        //console.log("fire ball update")
         let scale = this.playground.scale;
         this.ctx.beginPath();
         this.ctx.arc(this.x * scale,this.y * scale,this.radius * scale,0,Math.PI * 2,false);
         this.ctx.fillStyle = this.color;
         this.ctx.fill();
+    }
+
+    on_destroy()
+    {
+        let fireballs = this.player.fireballs;
+        for (let i = 0; i < fireballs.length ; i++)
+        {
+            let tfb = fireballs[i];
+            if (tfb==this)
+            {
+                fireballs.splice(i,1);
+                break;
+            }
+        }
     }
 }
 class MultiPlayerSocket{
@@ -584,11 +647,26 @@ class MultiPlayerSocket{
         //指定当收到服务器发来的消息的时候的回调函数
         this.ws.onmessage = function(e){
             let data = JSON.parse(e.data);
-            console.log(data);
+            //console.log(data);
             let uuid = data.uuid;
             if (uuid === outer.uuid)
                    return false;
-           outer.receive_create_player(uuid,data.username,data.photo);
+            let event = data.event;
+            if (event === "create player")
+                outer.receive_create_player(uuid,data.username,data.photo);
+            else if (event === "move to")
+                outer.receive_move_to(uuid,data.tx,data.ty);
+            else if (event === "shoot fireball")
+                outer.receive_shoot_fireball(uuid,data.tx,data.ty,data.ball_uuid);
+            else if (event === "attack")
+                outer.receive_attack(
+                    uuid,
+                    data.attacked_uuid,
+                    data.x,
+                    data.y,
+                    data.angle,
+                    data.damage,
+                    data.ball_uuid);
         };
     }
 
@@ -605,9 +683,10 @@ class MultiPlayerSocket{
         }));
     }
 
-    receive_create_player(uuid,username,photo){
+    receive_create_player(uuid,username,photo)
+    {
         let pg = this.playground;
-        let player =new Player(
+        let player = new Player(
             pg,
             pg.width / 2 / pg.scale,
             pg.height / 2 / pg.scale,
@@ -620,7 +699,86 @@ class MultiPlayerSocket{
         );
         player.uuid = uuid;
         pg.players.push(player);
+    }
 
+    send_move_to (tx,ty) 
+    {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            "event":"move to",
+            "uuid": outer.uuid,
+            "tx":tx,
+            "ty":ty,
+        }));
+    }
+
+    receive_move_to (uuid,tx,ty) 
+    {
+        let pg = this.playground;
+        let player = this.get_player(uuid);
+        if (player)
+                player.move_to(tx,ty);
+    }
+
+    get_player(uuid)
+    {
+        let players = this.playground.players;
+        for (let i = 0 ; i<players.length ; i++){
+            let player = players[i];
+            if (player.uuid === uuid)
+                   return player;
+        }
+        return null;
+    }
+
+    send_shoot_fireball(tx,ty,ball_uuid)
+    {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            "event":"shoot fireball",
+            "uuid":outer.uuid,
+            "tx":tx,
+            "ty":ty,
+            "ball_uuid":ball_uuid,
+        }));
+    }
+    receive_shoot_fireball(uuid,tx,ty,ball_uuid)
+    {
+        let pg =this.playground;
+        let player = this.get_player(uuid);
+        if (player)
+        {
+            let fireball = player.shoot_fireball(tx,ty);
+            fireball.uuid = ball_uuid;
+        }
+    }
+
+    send_attack(attacked_uuid,x,y,angle,damage,ball_uuid)
+    {
+        //被击中的人的uuid, x,y 被击中角度,被击中伤害,使用的炮弹的uuid,用来删除其他窗口仅作特效的炮弹
+        //被击中时,会强行同步所有窗口被击中者的位置
+        //console.log("send_attack",damage);
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            "event":"attack",
+            "uuid":outer.uuid,
+            "attacked_uuid":attacked_uuid,
+            "x":x,
+            "y":y,
+            "angle":angle,
+            "damage":damage,
+            "ball_uuid":ball_uuid,
+        }));
+    }
+
+    receive_attack(attacker_uuid,attacked_uuid,x,y ,angle,damage,ball_uuid)
+    {
+        let attacker = this.get_player(attacker_uuid);
+        let attacked = this.get_player(attacked_uuid);
+        if (attacker && attacked)
+        {
+            attacked.receive_attacked(x,y,angle,damage,ball_uuid,attacker);
+        }
     }
 }
 
@@ -635,7 +793,8 @@ class AcGamePlayGround
         this.start();
     }
 
-    get_random_color(){
+    get_random_color()
+    {
         let colors = ["blue","red","orange","pink","green","yellow"];
         return colors[Math.floor(Math.random()* colors.length)];
     }
@@ -648,8 +807,8 @@ class AcGamePlayGround
         });
     }
 
-    resize(){
-        console.log("resize");
+    resize()
+    {
         //把窗口大小放缩到当前窗口大小,并且保证长宽比为16：9
         this.width = this.$playground.width();
         this.height = this.$playground.height();
@@ -665,11 +824,7 @@ class AcGamePlayGround
     {
         let outer = this;
         this.$playground.show();
-        //console.log(this.$playground.width());
-        //console.log(this.$playground.height());
-
-        //this.width = this.$playground.width();
-        //this.height = this.$playground.height();
+        this.mode = mode;
         this.game_map = new GameMap(this);
         this.resize();
         this.players = [];
@@ -686,8 +841,10 @@ class AcGamePlayGround
             this.root.settings.photo,
         ));
         //添加其他玩家
-        if (mode === "single-mode"){
-            for (let i=0;i<5;i++){
+        if (mode === "single-mode")
+        {
+            for (let i=0;i<5;i++)
+            {
                 this.players.push(new Player(
                     this,
                     this.width / 2 / this.scale,
@@ -699,12 +856,14 @@ class AcGamePlayGround
                 ));
             }
         }
-        else if (mode === "multi-mode"){
+        else if (mode === "multi-mode")
+        {
             //声明了该类(MultiPlayerSocket)之后,会为我们创建WebSocket连接
             this.mps = new MultiPlayerSocket(this);
             this.mps.uuid = this.players[0].uuid;
             // socket链接创建成功之后的回调函数
-            this.mps.ws.onopen = function (){
+            this.mps.ws.onopen = function ()
+            {
                 outer.mps.send_create_player(outer.root.settings.username,outer.root.settings.photo);
             };
         }
@@ -863,7 +1022,7 @@ class Settings{
             url:"https://app1854.acapp.acwing.com.cn/settings/acwing/web/apply_code/",
             type: "GET",
             success:function(resp){
-                console.log(resp)
+                // console.log(resp)
                 if (resp.result==="success"){
                         //重定向页面
                         window.location.replace(resp.apply_code_url);
@@ -886,7 +1045,7 @@ class Settings{
                 password:password,
             },
             success:function(resp){
-                console.log(resp);
+                // console.log(resp);
                 if (resp.result==="success"){
                     location.reload(); //刷新页面
                 }else{
@@ -895,23 +1054,26 @@ class Settings{
             }
         });
     }
-    
+
     log_out_on_remote(){
-    //在远程服务器上登出
-        if (this.platform === "ACAPP") return false;
-        $.ajax({
-            url:"https://app1854.acapp.acwing.com.cn/settings/logout/",
-            type:"GET",
-            success:function(resp){
-                console.log(resp);
-                if (resp.result === "success"){
-                    location.reload();
+        //在远程服务器上登出
+        if (this.platform === "ACAPP") {
+            this.root.acwingos.api.window.close();
+        }
+        else{
+            $.ajax({
+                url:"https://app1854.acapp.acwing.com.cn/settings/logout/",
+                type:"GET",
+                success:function(resp){
+                    // console.log(resp);
+                    if (resp.result === "success"){
+                        location.reload();
+                    }
                 }
-            }
-        });
+            });}
     }
     register_on_remote(){
-    //web端,在远程服务器上注册
+        //web端,在远程服务器上注册
         let outer = this;
         let username = this.$register_username.val(); //获取input元素的值
         let password = this.$register_password.val();
@@ -926,24 +1088,24 @@ class Settings{
                 password_comfirm:password_comfirm
             },
             success:function(resp){
-                console.log(resp);
+                // console.log(resp);
                 if (resp.result==="success"){
                     location.reload(); //刷新页面
                 }else{
-                        outer.$register_error_message.html(resp.result) // 显示错误信息
+                    outer.$register_error_message.html(resp.result) // 显示错误信息
                 }
             }
         });
-   
+
     }
 
     add_listening_events_register(){
         let outer = this;
         this.$register_to_login.click(function(){
-                outer.login();
+            outer.login();
         });
         this.$register_commit.click(function(){
-                outer.register_on_remote();
+            outer.register_on_remote();
         });
     }
 
@@ -951,7 +1113,7 @@ class Settings{
         this.$login.hide();
         this.$register.show();
     }
-    
+
     login(){
         //console.log("enter show");
         this.$login.show();
@@ -971,14 +1133,14 @@ class Settings{
             }
         });
     }
-    
+
     acapp_login(appid,redirect_uri,scope,state){
         let outer = this;
         //console.log("use acwingos");
         //console.log(state)
         this.root.acwingos.api.oauth2.authorize(appid, redirect_uri, scope, state, function(resp){
             //resp的返回值是receive_code 的返回值
-            console.log(resp)
+            //console.log(resp)
             if (resp.result==="success"){
                 //console.log("enter menu main")
                 outer.username = resp.username;
@@ -988,7 +1150,7 @@ class Settings{
             }
         });
     }
-    
+
     getinfo_web(){
         let outer = this;
         $.ajax({
@@ -1002,7 +1164,7 @@ class Settings{
             },
             //调用成功的回调函数,请求返回的内容在resp中
             success:function(resp){
-                console.log(resp);
+                //console.log(resp);
                 if (resp.result=="success"){
                     outer.hide();
                     outer.username = resp.username;
@@ -1013,7 +1175,7 @@ class Settings{
                     //弹出登录界面
                     //console.log("enter login")
                     outer.login();
-                    
+
                 }
             }
         });
@@ -1023,7 +1185,7 @@ class Settings{
     hide(){
         this.$settings.hide();
     }
-    
+
     show(){
         this.$settings.show();
     }
