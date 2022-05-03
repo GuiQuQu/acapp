@@ -22,7 +22,7 @@ def getinfo_web(request):
         player = Player.objects.get(user = user)
         return JsonResponse({
             'result':'success',
-            'user':player.user.username,
+            'username':player.user.username,
             'photo':player.photo,
             })
 

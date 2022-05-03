@@ -1,6 +1,7 @@
 class Player extends AcGameObject{
-    constructor(playground,x,y,radius,color,speed,player_type)
+    constructor(playground,x,y,radius,color,speed,player_type,username,photo)
     {
+        console.log(player_type,username,photo);
         super();
         //console.log("player")
         this.playground = playground;
@@ -23,8 +24,10 @@ class Player extends AcGameObject{
         this.cur_skill =null;
         if (this.player_type !== "robot"){
             this.img = new Image();
-            this.img.src = this.playground.root.settings.photo;
+            // this.img.src = this.playground.root.settings.photo;
+            this.img.src = photo;
         }
+        this.username = username;
     }
 
     start()
@@ -145,7 +148,7 @@ class Player extends AcGameObject{
 
     }
  //    this.ctx.fillStyle = "rgba(0,0,0,0.2)";
-          //  this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
+          //  this.ctx.fillRect (0,0,this.ctx.canvas.width,this.ctx.canvas.height);
        
     update_move(){
         this.spend_time += this.timedelta / 1000;

@@ -219,8 +219,9 @@ class Particle extends AcGameObject{
     }
 }
 class Player extends AcGameObject{
-    constructor(playground,x,y,radius,color,speed,player_type)
+    constructor(playground,x,y,radius,color,speed,player_type,username,photo)
     {
+        console.log(player_type,username,photo);
         super();
         //console.log("player")
         this.playground = playground;
@@ -243,8 +244,10 @@ class Player extends AcGameObject{
         this.cur_skill =null;
         if (this.player_type !== "robot"){
             this.img = new Image();
-            this.img.src = this.playground.root.settings.photo;
+            // this.img.src = this.playground.root.settings.photo;
+            this.img.src = photo;
         }
+        this.username = username;
     }
 
     start()
@@ -365,7 +368,7 @@ class Player extends AcGameObject{
 
     }
  //    this.ctx.fillStyle = "rgba(0,0,0,0.2)";
-          //  this.ctx.fillRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
+          //  this.ctx.fillRect (0,0,this.ctx.canvas.width,this.ctx.canvas.height);
        
     update_move(){
         this.spend_time += this.timedelta / 1000;
@@ -572,19 +575,51 @@ class MultiPlayerSocket{
         this.start();
     }
 
-    start(){
+    start () {
+        this.receive();
+    }
+    
+    receive () {
+        let outer = this;
+        //指定当收到服务器发来的消息的时候的回调函数
+        this.ws.onmessage = function(e){
+            let data = JSON.parse(e.data);
+            console.log(data);
+            let uuid = data.uuid;
+            if (uuid === outer.uuid)
+                   return false;
+           outer.receive_create_player(uuid,data.username,data.photo);
+        };
     }
 
-    send_create_player(){
+    send_create_player(username,photo){
         let outer = this;
         //利用ws想服务器发送请求
+        //console.log("send create player")
+        //console.log(username)
         this.ws.send(JSON.stringify({
-        "message":"create player",
+        "event":"create player",
         "uuid":outer.uuid,
+        "username":username,
+        "photo":photo,
         }));
     }
 
-    receiv_create_player(){
+    receive_create_player(uuid,username,photo){
+        let pg = this.playground;
+        let player =new Player(
+            pg,
+            pg.width / 2 / pg.scale,
+            pg.height / 2 / pg.scale,
+            pg.height / pg.scale * 0.05,
+            "white",
+            pg.height / pg.scale * 0.2,
+            "enemy",
+            username,
+            photo,
+        );
+        player.uuid = uuid;
+        pg.players.push(player);
 
     }
 }
@@ -639,20 +674,38 @@ class AcGamePlayGround
         this.resize();
         this.players = [];
         // 绝对 to 相对
-        this.players.push(new Player(this,this.width/2 / this.scale , this.height/ 2 / this.scale , this.height / this.scale * 0.05 ,"white",this.height / this.scale * 0.2,"me"));
+        this.players.push(new Player(
+            this,
+            this.width/2 / this.scale ,
+            this.height/ 2 / this.scale ,
+            this.height / this.scale * 0.05 ,
+            "white",
+            this.height / this.scale * 0.2,
+            "me",
+            this.root.settings.username,
+            this.root.settings.photo,
+        ));
         //添加其他玩家
         if (mode === "single-mode"){
             for (let i=0;i<5;i++){
-                this.players.push(new Player(this,this.width / 2 /this.scale,this.height / 2 / this.scale, this.height /this.scale * 0.05,this.get_random_color(),this.height / this.scale * 0.2,"robot"));
+                this.players.push(new Player(
+                    this,
+                    this.width / 2 / this.scale,
+                    this.height / 2 / this.scale, 
+                    this.height / this.scale * 0.05,
+                    this.get_random_color(),
+                    this.height / this.scale * 0.2,
+                    "robot"
+                ));
             }
         }
         else if (mode === "multi-mode"){
             //声明了该类(MultiPlayerSocket)之后,会为我们创建WebSocket连接
             this.mps = new MultiPlayerSocket(this);
             this.mps.uuid = this.players[0].uuid;
-            // 链接创建成功之后的回调函数
+            // socket链接创建成功之后的回调函数
             this.mps.ws.onopen = function (){
-                outer.mps.send_create_player();
+                outer.mps.send_create_player(outer.root.settings.username,outer.root.settings.photo);
             };
         }
     }
@@ -756,7 +809,7 @@ class Settings{
 
         this.$register_username = this.$register.find(".ac_game_settings_username input");
         this.$register_password = this.$register.find(".ac_game_settings_password_first input");
-        this.$register_password_comfirm = this.$register.find(".ac_game_settings_password_second input");
+        this.$register_password_comfirm = this.$register.find(".ac_game_settings_password_second  input");
         this.$register_commit = this.$register.find(".ac_game_settings_commit button");
         this.$register_error_message = this.$register.find(".ac_game_settings_error_message");
         this.$register_to_login = this.$register.find(".ac_game_settings_option");
@@ -804,6 +857,7 @@ class Settings{
     }
 
     acwing_login(){
+        //web端acwing登录
         console.log("click acwing login");
         $.ajax({
             url:"https://app1854.acapp.acwing.com.cn/settings/acwing/web/apply_code/",
@@ -857,7 +911,7 @@ class Settings{
         });
     }
     register_on_remote(){
-    //在远程服务器上注册
+    //web端,在远程服务器上注册
         let outer = this;
         let username = this.$register_username.val(); //获取input元素的值
         let password = this.$register_password.val();
@@ -959,7 +1013,7 @@ class Settings{
                     //弹出登录界面
                     //console.log("enter login")
                     outer.login();
-                    //outer.register();
+                    
                 }
             }
         });

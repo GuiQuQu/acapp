@@ -91,7 +91,7 @@ class Settings{
 
         this.$register_username = this.$register.find(".ac_game_settings_username input");
         this.$register_password = this.$register.find(".ac_game_settings_password_first input");
-        this.$register_password_comfirm = this.$register.find(".ac_game_settings_password_second input");
+        this.$register_password_comfirm = this.$register.find(".ac_game_settings_password_second  input");
         this.$register_commit = this.$register.find(".ac_game_settings_commit button");
         this.$register_error_message = this.$register.find(".ac_game_settings_error_message");
         this.$register_to_login = this.$register.find(".ac_game_settings_option");
@@ -139,6 +139,7 @@ class Settings{
     }
 
     acwing_login(){
+        //web端acwing登录
         console.log("click acwing login");
         $.ajax({
             url:"https://app1854.acapp.acwing.com.cn/settings/acwing/web/apply_code/",
@@ -192,7 +193,7 @@ class Settings{
         });
     }
     register_on_remote(){
-    //在远程服务器上注册
+    //web端,在远程服务器上注册
         let outer = this;
         let username = this.$register_username.val(); //获取input元素的值
         let password = this.$register_password.val();
@@ -294,7 +295,7 @@ class Settings{
                     //弹出登录界面
                     //console.log("enter login")
                     outer.login();
-                    //outer.register();
+                    
                 }
             }
         });

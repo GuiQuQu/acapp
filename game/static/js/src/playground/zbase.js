@@ -48,20 +48,38 @@ class AcGamePlayGround
         this.resize();
         this.players = [];
         // 绝对 to 相对
-        this.players.push(new Player(this,this.width/2 / this.scale , this.height/ 2 / this.scale , this.height / this.scale * 0.05 ,"white",this.height / this.scale * 0.2,"me"));
+        this.players.push(new Player(
+            this,
+            this.width/2 / this.scale ,
+            this.height/ 2 / this.scale ,
+            this.height / this.scale * 0.05 ,
+            "white",
+            this.height / this.scale * 0.2,
+            "me",
+            this.root.settings.username,
+            this.root.settings.photo,
+        ));
         //添加其他玩家
         if (mode === "single-mode"){
             for (let i=0;i<5;i++){
-                this.players.push(new Player(this,this.width / 2 /this.scale,this.height / 2 / this.scale, this.height /this.scale * 0.05,this.get_random_color(),this.height / this.scale * 0.2,"robot"));
+                this.players.push(new Player(
+                    this,
+                    this.width / 2 / this.scale,
+                    this.height / 2 / this.scale, 
+                    this.height / this.scale * 0.05,
+                    this.get_random_color(),
+                    this.height / this.scale * 0.2,
+                    "robot"
+                ));
             }
         }
         else if (mode === "multi-mode"){
             //声明了该类(MultiPlayerSocket)之后,会为我们创建WebSocket连接
             this.mps = new MultiPlayerSocket(this);
             this.mps.uuid = this.players[0].uuid;
-            // 链接创建成功之后的回调函数
+            // socket链接创建成功之后的回调函数
             this.mps.ws.onopen = function (){
-                outer.mps.send_create_player();
+                outer.mps.send_create_player(outer.root.settings.username,outer.root.settings.photo);
             };
         }
     }
