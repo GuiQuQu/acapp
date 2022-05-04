@@ -25,13 +25,30 @@ class Player extends AcGameObject{
         {
             this.img = new Image();
             this.img.src = photo;
+            // 向服务器发送创建玩家的信息 {"event":create player,"uuid":uuid,"username":username,"photo":photod
+            this.username = username;
         }
-        // 向服务器发送创建玩家的信息 {"event":create player,"uuid":uuid,"username":username,"photo":photod
-        this.username = username;
+        if (this.player_type === "me")
+        {
+            this.fireball_coldtime = 3;
+            this.fireball_img = new Image();
+            this.fireball_img.src = "https://cdn.acwing.com/media/article/image/2021/12/02/1_9340c86053-fireball.png";
+            //闪现CD
+            this.blink_coldtime = 5;
+            this.blink_img = new Image();
+            this.blink_img.src = "https://cdn.acwing.com/media/article/image/2021/12/02/1_daccabdc53-blink.png";
+        }
     }
 
     start()
     {
+        this.playground.player_count ++ ;
+        this.playground.noticeboard.write("已就绪: " + this.playground.player_count + " 人");
+        if (this.playground.player_count >= 3)
+        {
+            this.playground.state = "fighting";
+            this.playground.noticeboard.write("Fighting")
+        }
         if (this.player_type === "me")
         {
             this.add_listening_events();
@@ -76,11 +93,15 @@ class Player extends AcGameObject{
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 1)
             {
-
+                if (outer.playground.state !== "fighting")
+                    return false;
+                //射击
                 let tx = (e.clientX-rect.left) / scale;
                 let ty = (e.clientY-rect.top) / scale;
                 if (outer.cur_skill === "fireball")
                 {
+                    if (outer.fireball_coldtime > outer.eps)
+                        return false;
                     let fireball = outer.shoot_fireball(tx,ty);
                     outer.cur_skill = null;
                     if (outer.playground.mode === "multi-mode")
@@ -88,9 +109,22 @@ class Player extends AcGameObject{
                         outer.playground.mps.send_shoot_fireball (tx,ty,fireball.uuid);
                     }
                 }
+                else if (outer.cur_skill === "blink")
+                {
+                    if (outer.blink_coldtime > outer.eps)
+                        return false;
+                    outer.blink(tx,ty);
+                    if (outer.playground.mode === "multi-mode")
+                    {
+                        outer.playground.mps.send_blink(tx,ty);
+                    }
+                }
             }
             else if (e.which === 3)
-            {
+            {    
+                if (outer.playground.state !== "fighting")
+                    return false;
+                //移动
                 let tx = (e.clientX-rect.left) / scale;
                 let ty = (e.clientY-rect.top) / scale;
                 outer.move_to(tx,ty);
@@ -101,8 +135,21 @@ class Player extends AcGameObject{
             }
         });
         $(window).keydown(function(e){
-            if (e.which === 81){
+            if (outer.playground.state !="fighting")
+                return true;
+
+
+            if (e.which === 81)
+            {
+                if (outer.fireball_coldtime > outer.eps)
+                    return true;
                 outer.cur_skill ="fireball";
+                return false;
+            } else if (e.which === 70)
+            {
+                if (outer.fireball_coldtime > outer.eps)
+                    return true;
+                outer.cur_skill = "blink";
                 return false;
             }
         });
@@ -121,9 +168,20 @@ class Player extends AcGameObject{
         let move_length = this.playground.height / scale * 0.8;
         let fireball = new FireBall(this.playground,this,x,y,radius,vx,vy,color,speed,move_length,this.playground.height / scale * 0.01);
         this.fireballs.push(fireball);
+        this.fireball_coldtime = 3;
         return fireball;
     }
 
+    blink(tx,ty)
+    {
+        let dist = this.get_dist(this.x,this.y,tx,ty);
+        let d = Math.min(dist, 0.8);
+        let angle = Math.atan2(ty-this.y,tx-this.x);
+        this.x += d * Math.cos(angle);
+        this.y += d * Math.sin(angle);
+        this.move_length = 0 //闪现之后停下来
+        this.blink_coldtime = 5;
+    }
     destroy_fireball(uuid)
     {
         for (let i=0;i<this.fireballs.length;i++)
@@ -136,7 +194,7 @@ class Player extends AcGameObject{
             }
         }
     }
-    
+
     is_attacked(angle,damage)
     {
         for (let i =0 ;i< 30 + Math.random() * 15 ;i++)
@@ -164,7 +222,7 @@ class Player extends AcGameObject{
         this.damage_speed = damage * 100;
         this.speed *= 0.8;
     }
-    
+
     receive_attacked (x,y,angle,damage,ball_uuid,attacker)
     {
         attacker.destroy_fireball(ball_uuid);
@@ -174,6 +232,10 @@ class Player extends AcGameObject{
     }
     on_destroy()
     {
+        if (this.player_type === "me")
+        {
+            this.playground.state = "over";
+        }
         for (let i = 0;i<this.playground.players.length;i++)
         {
             if (this === this.playground.players[i])
@@ -185,13 +247,26 @@ class Player extends AcGameObject{
     }
     update()
     {
+        this.spend_time += this.timedelta / 1000;
+        if (this.player_type === "me" && this.playground.state === "fighting")
+        {
+            this.update_coldtime();
+        }
         this.update_move();
         this.render();
     }
 
+    update_coldtime()
+    {
+        this.fireball_coldtime -= this.timedelta / 1000;
+        this.fireball_coldtime = Math.max(0,this.fireball_coldtime);
+
+        this.blink_coldtime -= this.timedelta / 1000;
+        this.blink_coldtime = Math.max(0,this.blink_coldtime);
+    }
+
     update_move()
     {
-        this.spend_time += this.timedelta / 1000;
         if (this.player_type==="robot" && this.spend_time > 2 && Math.random() < 1 / 180.0 )
         {
             let target = Math.floor(Math.random() * this.playground.players.length);
@@ -253,6 +328,60 @@ class Player extends AcGameObject{
             this.ctx.beginPath();
             this.ctx.arc(this.x * scale,this.y * scale,this.radius * scale,0,Math.PI * 2,false);
             this.ctx.fillStyle = this.color;
+            this.ctx.fill();
+        }
+        if (this.player_type === "me" && this.playground.state === "fighting")
+        {
+            this.render_skill_coldtime();
+        }
+    }
+
+    render_skill_coldtime()
+    {
+        let scale = this.playground.scale;
+        //scale 单位是页面高度,因此宽度的长度为 16/9*scale 约等于1.7
+        let x = 1.5 , y = 0.9, r = 0.04;
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.arc(x * scale, y * scale, r * scale, 0, Math.PI * 2, false);
+        this.ctx.stroke();
+        this.ctx.clip();
+        this.ctx.drawImage(
+            this.fireball_img,
+            (x - r) * scale,
+            (y - r) * scale,
+            r * 2 * scale,
+            r * 2 * scale);
+        this.ctx.restore();
+        if (this.fireball_coldtime > 0){
+            this.ctx.beginPath();
+            this.ctx.moveTo(x * scale, y * scale);
+            //调整绘制的角度,让冷却时间顺时针转
+            this.ctx.arc(x * scale,y * scale,r * scale,0 - Math.PI / 2,Math.PI * 2 * (1 -  this.fireball_coldtime / 3) - Math.PI / 2 ,true);
+            this.ctx.lineTo(x * scale, y * scale);
+            this.ctx.fillStyle = "rgba(0,0,255,0.6)";
+            this.ctx.fill();
+        }
+        x = 1.62 , y = 0.9, r = 0.04;
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.arc(x * scale, y * scale, r * scale, 0, Math.PI * 2, false);
+        this.ctx.stroke();
+        this.ctx.clip();
+        this.ctx.drawImage(
+            this.blink_img,
+            (x - r) * scale,
+            (y - r) * scale,
+            r * 2 * scale,
+            r * 2 * scale);
+        this.ctx.restore();
+        if (this.blink_coldtime > 0){
+            this.ctx.beginPath();
+            this.ctx.moveTo(x * scale, y * scale);
+            //调整绘制的角度,让冷却时间顺时针转
+            this.ctx.arc(x * scale,y * scale,r * scale,0 - Math.PI / 2,Math.PI * 2 * (1 -  this.blink_coldtime / 5) - Math.PI / 2 ,true);
+            this.ctx.lineTo(x * scale, y * scale);
+            this.ctx.fillStyle = "rgba(0,0,255,0.6)";
             this.ctx.fill();
         }
     }

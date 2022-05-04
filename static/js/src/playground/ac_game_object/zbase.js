@@ -9,9 +9,7 @@ class AcGameObject
         this.timedelta = 0; //当前帧距离上一帧的时间间隔,单位毫秒
         //因为可能不同浏览器的刷新频率不同，每次刷新都执行update的话，
         //不同浏览器实际的刷新频率就不一样，因此需要使用时间来衡量
-        //console.log("调用了AcGameObject的构造函数")
         this.uuid = this.create_uuid();
-        //console.log(this.uuid);
     }
     //uuid 来表示这个物品的唯一的id,这样在多人联机对战的时候就可以通过uuid确认这个谁发的消息,
     //这里保证uuid唯一的逻辑是随机8位数,重复的概率很低
@@ -33,13 +31,13 @@ class AcGameObject
         //console.log('update...')
     }
 
-    on_destory()  //删掉物体前执行,例如给对手加分等操作
+    on_destroy()  //删掉物体前执行,例如给对手加分等操作
     {
 
     }
     destroy()  //删掉该物体
     {
-        this.on_destory();
+        this.on_destroy();
         for (let i=0;i<AC_GAME_OBJECT.length;i++)
         {//js里最好用3个等号，表示全等
             if (AC_GAME_OBJECT[i]===this){

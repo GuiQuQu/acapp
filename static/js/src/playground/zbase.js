@@ -44,6 +44,9 @@ class AcGamePlayGround
         this.game_map = new GameMap(this);
         this.resize();
         this.players = [];
+        this.noticeboard = new NoticeBoard(this);
+        this.player_count = 0;
+        this.state = "waiting"  // waiting -> fighting -> over
         // 绝对 to 相对
         this.players.push(new Player(
             this,

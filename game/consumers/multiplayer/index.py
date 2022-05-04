@@ -95,6 +95,16 @@ class MultiPlayer(AsyncWebsocketConsumer):
             "ball_uuid":data["ball_uuid"],
                 })
 
+    async def blink(self,data):
+        await self.channel_layer.group_send(self.room_name,
+                {
+                    "type":"group_send_event",
+                    "event":data["event"],
+                    "uuid":data["uuid"],
+                    "tx":data["tx"],
+                    "ty":data["ty"],
+                    })
+
     async def group_send_event(self,data):
         # 收到消息直接返回给前端
         # print(data)
@@ -113,3 +123,5 @@ class MultiPlayer(AsyncWebsocketConsumer):
             await self.shoot_fireball(data)
         elif event == "attack":
             await self.attack(data)
+        elif event == "blink":
+            await self.blink(data)
