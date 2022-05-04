@@ -77,6 +77,7 @@ class AcGamePlayGround
         }
         else if (mode === "multi-mode")
         {
+            this.chat_field = new ChatField(this);
             //声明了该类(MultiPlayerSocket)之后,会为我们创建WebSocket连接
             this.mps = new MultiPlayerSocket(this);
             this.mps.uuid = this.players[0].uuid;

@@ -39,6 +39,8 @@ class MultiPlayerSocket{
                     data.ball_uuid);
             else if (event === "blink")
                 outer.receive_blink(uuid,data.tx,data.ty);
+            else if (event === "message")
+                outer.receive_message(uuid,data.message);
         };
     }
 
@@ -171,6 +173,26 @@ class MultiPlayerSocket{
         {
             player.blink(tx,ty);
         }
+    }
+
+    send_message(message)
+    {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            "event":"message",
+            "uuid":outer.uuid,
+            "message":message,
+        }));
+    }
+
+    receive_message(uuid,message){
+        console.log(uuid,message);
+        let player = this.get_player(uuid);
+        if (player)
+        {
+            player.playground.chat_field.add_message(player.username,message);
+        }
+        
     }
 }
 

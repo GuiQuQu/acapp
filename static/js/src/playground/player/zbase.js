@@ -134,10 +134,28 @@ class Player extends AcGameObject{
                 }
             }
         });
-        $(window).keydown(function(e){
+        //$(window).keydown(function(e)
+        //使用原来代码,一个页面内的每一个窗口都会接受键盘的输入,当同时
+        //打开多个窗口时,会出现bug
+        this.playground.game_map.$canvas.keydown(function(e)
+        {
+            if (e.which === 13)
+            {
+                if (outer.playground.mode === "multi-mode")
+                {
+                    outer.playground.chat_field.show_input();
+                }
+            }
+            else if (e.which === 27)
+            {
+                if (outer.playground.mode === "multi-mode")
+                {
+                    outer.playground.chat_field.hide_input();
+                }
+            }
+
             if (outer.playground.state !="fighting")
                 return true;
-
 
             if (e.which === 81)
             {

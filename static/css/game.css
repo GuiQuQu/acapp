@@ -142,10 +142,11 @@
 }
 
 .ac_game_playground > canvas {
-    position:relative;
+    position:relative; /*相对定位是指相对于文档中的正常位置偏移的值*/
     top:50%;
     left:50%;
     transform:translate(-50%,-50%); /*修改这个矩形框的锚点到矩形中心*/
+    
 }
 .ac_game_menu_item
 {
@@ -168,4 +169,41 @@
     transform:scale(1.2);
     /*动画时间100ms*/
     transition:100ms;
+}
+
+.ac_game_chat_field_history
+{
+    position:absolute;
+    top:60%;
+    left:15%;
+    /*transform:translate(-50%,-50%);*//*修改这个矩形框的锚点到矩形中心*/
+
+    width: 32%;
+    height: 20%;
+
+    color:white;
+    font-size:2vh;
+
+    padding:5px;
+    overflow:auto; /*垂直超出距离自动加滚动条*/
+}
+/*出现滚动条之后,必须选择滚动条才可以滚动*/
+.ac_game_chat_field_history::-webkit-scrollbar
+{
+    width:0;
+}
+
+.ac_game_chat_field_input {
+    position:absolute;
+    top:82%;
+    left:15%;
+    /*transform:translate(-50%,-50%);*/ /*修改这个矩形框的锚点到矩形中心*/
+
+    width: 20%;
+    height: 3vh;
+
+    color:white;
+    font-size:2vh;
+
+    background-color:rgba(255,255,230,0.2);
 }
