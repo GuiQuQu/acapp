@@ -76,3 +76,4 @@ cache.has_key("abc")
 # 删除关键字
 cache.delete("wkl")
 ```
+

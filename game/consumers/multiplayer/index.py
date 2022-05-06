@@ -2,62 +2,56 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from django.conf import settings # 可以导入django项目的settings文件
 from django.core.cache import cache
+
+from thrift import Thrift
+from thrift.transport import TSocket
+from thrift.transport import TTransport
+from thrift.protocol import TBinaryProtocol
+
+from match_system.src.match_server.match_service import Match
+
+from game.models.player.player import Player
+from channels.db import database_sync_to_async
+
 class MultiPlayer(AsyncWebsocketConsumer):
     # 这个函数是建立连接的时候执行
     async def connect(self):
-
-        self.room_name = None
-        for i in range(1000):
-            name = f"room-{i}"
-            if not cache.has_key(name) or len(cache.get(name)) < settings.ROOM_CAPACITY:
-                self.room_name = name
-                break
-
-        if not self.room_name:
-            return
-
-        await self.accept() # 挂起该函数,去执行接受请求
-
-        if not cache.has_key(self.room_name):
-            cache.set(self.room_name,[],3600) # 建立一个有效期1个小时的房间
-
-        # 服务器向前端发送当前已有的玩家信息
-        for player in cache.get(self.room_name):
-            await self.send(text_data = json.dumps({
-                    "event":"create player",
-                    "uuid":player["uuid"],
-                    "username":player["username"],
-                    "photo":player["photo"],
-                }))
-
-        # django channels提供了组的概念,在组里也提供的群发等api功能
-        # 一个连接(channel)被建立之后,将这个连接加入group_name是self.room_name 的组里 
-        await self.channel_layer.group_add(self.room_name, self.channel_name)
+        await self.accept()
 
     # 这个函数是正常断开连接的时候执行,因此我刷新页面的时候会输出disconnect
     async def disconnect(self, close_code):
         print('disconnect')
-        await self.channel_layer.group_discard(self.room_name, self.channel_name);
+        if self.room_name:
+            await self.channel_layer.group_discard(self.room_name, self.channel_name);
 
     async def create_player(self,data):
+        self.room_name = None
+        self.uuid = data["uuid"]
+        # 增加匹配服务之后,重写create_player
+        # Make socket
+        transport = TSocket.TSocket('127.0.0.1', 9090)
 
-        players = cache.get(self.room_name)
-        # print(data)
-        players.append({
-            "uuid":data["uuid"],
-            "username":data["username"],
-            "photo":data["photo"],
-            })
-        cache.set(self.room_name,players,3600)
-        # 向组名为self.room_name里的所有channels里群发消息
-        await self.channel_layer.group_send(self.room_name,
-                {
-                    "type":"group_send_event", # 组内接受该消息的的函数名
-                    "event":data["event"],
-                    "uuid":data["uuid"],
-                    "username":data["username"],
-                    "photo":data["photo"]
-                })
+        # Buffering is critical. Raw sockets are very slow
+        transport = TTransport.TBufferedTransport(transport)
+
+        # Wrap in a protocol
+        protocol = TBinaryProtocol.TBinaryProtocol(transport)
+
+        # Create a client to use the protocol encoder
+        client = Match.Client(protocol)
+
+        def db_get_player():
+            return Player.objects.get(user__username=data["username"])
+        player = await database_sync_to_async(db_get_player)()
+        # Connect!
+        transport.open()
+
+        client.add_player(player.score,data["uuid"],data["username"],data["photo"],self.channel_name)
+
+        # Close!
+        transport.close()
+
+
 
     async def move_to(self,data):
           await self.channel_layer.group_send(self.room_name,
@@ -106,15 +100,22 @@ class MultiPlayer(AsyncWebsocketConsumer):
                     })
 
     async def message(self,data):
+        # print(data)
         await self.channel_layer.group_send(self.room_name,
             {
                 "type":"group_send_event",
                 "event":data["event"],
                 "uuid":data["uuid"],
+                "username":data["username"],
                 "message":data["message"],
                 })
 
     async def group_send_event(self,data):
+        # 在cache里查找匹配系统为自己匹配的房间号,便于后面的所有同步操作使用
+        keys = cache.keys("*%s*" % (self.uuid))
+        if len(keys) > 0:
+            self.room_name = keys[0]
+            # print(self.room_name)
         # 收到消息直接返回给前端
         # print(data)
         await self.send(text_data = json.dumps(data))

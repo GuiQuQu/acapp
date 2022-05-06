@@ -175,12 +175,13 @@ class MultiPlayerSocket{
         }
     }
 
-    send_message(message)
+    send_message(username,message)
     {
         let outer = this;
         this.ws.send(JSON.stringify({
             "event":"message",
             "uuid":outer.uuid,
+            "username":username,
             "message":message,
         }));
     }
