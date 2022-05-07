@@ -65,7 +65,6 @@ class Pool:
         print("Match success: %s %s %s" % (ps[0].username,ps[1].username,ps[2].username))
         room_name = "room-%s-%s-%s" % (ps[0].uuid,ps[1].uuid,ps[2].uuid)
         players = []
-        cache.set(room_name,players,3600) #有效期 1hour
         for p in ps:
             async_to_sync(channel_layer.group_add)(room_name,p.channel_name)
             players.append({
@@ -74,7 +73,7 @@ class Pool:
             "photo":p.photo,
             "hp":100,
                 })
-
+        cache.set(room_name,players,3600) #有效期 1hour
         for p in ps:
             async_to_sync(channel_layer.group_send)(
                 room_name,

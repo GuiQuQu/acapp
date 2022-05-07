@@ -61,7 +61,7 @@ class AcGameMenu
     }
 
 }
-let AC_GAME_OBJECT =[]; //全局数组保存游戏内的每一个对象，他们都需要在每一帧刷新
+let AC_GAME_OBJECT = []; //全局数组保存游戏内的每一个对象，他们都需要在每一帧刷新
 
 class AcGameObject
 {
@@ -88,7 +88,10 @@ class AcGameObject
     {
 
     }
+    late_update() //在每一帧的最后执行一次,相当于所有物品都已经update之后,在这之后执行
+    {
 
+    }
     update()  //每一帧都会执行一次
     {
         //console.log('update...')
@@ -103,7 +106,7 @@ class AcGameObject
         this.on_destroy();
         for (let i=0;i<AC_GAME_OBJECT.length;i++)
         {//js里最好用3个等号，表示全等
-            if (AC_GAME_OBJECT[i]===this){
+            if (AC_GAME_OBJECT[i] === this){
                 AC_GAME_OBJECT.splice(i,1); //从下标i开始，删除一个
                 break;
             }
@@ -128,6 +131,9 @@ let AC_GAME_ANIMATION = function(timestamp){
             obj.timedelta = timestamp -last_timestamp;
             obj.update();
         }
+    }
+    for (let i = 0;i<AC_GAME_OBJECT.length;i++){
+        AC_GAME_OBJECT[i].late_update();
     }
     last_timestamp = timestamp;
     requestAnimationFrame(AC_GAME_ANIMATION); //通过递归保证循环执行
@@ -384,7 +390,8 @@ class Player extends AcGameObject{
         }
         if (this.player_type === "me")
         {
-            this.fireball_coldtime = 3;
+            this.fireball_coldtime_total = 0.1;
+            this.fireball_coldtime = this.fireball_coldtime_total;
             this.fireball_img = new Image();
             this.fireball_img.src = "https://cdn.acwing.com/media/article/image/2021/12/02/1_9340c86053-fireball.png";
             //闪现CD
@@ -519,7 +526,7 @@ class Player extends AcGameObject{
                 return false;
             } else if (e.which === 70)
             {
-                if (outer.fireball_coldtime > outer.eps)
+                if (outer.blink_coldtime > outer.eps)
                     return true;
                 outer.cur_skill = "blink";
                 return false;
@@ -540,7 +547,7 @@ class Player extends AcGameObject{
         let move_length = this.playground.height / scale * 0.8;
         let fireball = new FireBall(this.playground,this,x,y,radius,vx,vy,color,speed,move_length,this.playground.height / scale * 0.01);
         this.fireballs.push(fireball);
-        this.fireball_coldtime = 3;
+        this.fireball_coldtime = this.fireball_coldtime_total;
         return fireball;
     }
 
@@ -605,8 +612,10 @@ class Player extends AcGameObject{
     on_destroy()
     {
         if (this.player_type === "me")
-        {
-            this.playground.state = "over";
+        {   if (this.playground.state === "fighting"){
+                this.playground.state = "over";
+                this.playground.scoreboard.lose();
+            }
         }
         for (let i = 0;i<this.playground.players.length;i++)
         {
@@ -619,15 +628,22 @@ class Player extends AcGameObject{
     }
     update()
     {
+        
         this.spend_time += this.timedelta / 1000;
         if (this.player_type === "me" && this.playground.state === "fighting")
         {
             this.update_coldtime();
         }
         this.update_move();
+        this.update_win();
         this.render();
     }
-
+    update_win(){
+        if (this.playground.state === "fighting" && this.player_type === "me" && this.playground.players.length == 1){
+            this.playground.state = "over";
+            this.playground.scoreboard.win();
+        }
+    }
     update_coldtime()
     {
         this.fireball_coldtime -= this.timedelta / 1000;
@@ -729,7 +745,7 @@ class Player extends AcGameObject{
             this.ctx.beginPath();
             this.ctx.moveTo(x * scale, y * scale);
             //调整绘制的角度,让冷却时间顺时针转
-            this.ctx.arc(x * scale,y * scale,r * scale,0 - Math.PI / 2,Math.PI * 2 * (1 -  this.fireball_coldtime / 3) - Math.PI / 2 ,true);
+            this.ctx.arc(x * scale,y * scale,r * scale,0 - Math.PI / 2,Math.PI * 2 * (1 -  this.fireball_coldtime / this.fireball_coldtime_total) - Math.PI / 2 ,true);
             this.ctx.lineTo(x * scale, y * scale);
             this.ctx.fillStyle = "rgba(0,0,255,0.6)";
             this.ctx.fill();
@@ -758,7 +774,62 @@ class Player extends AcGameObject{
         }
     }
 }
-class FireBall extends AcGameObject{
+class ScoreBoard extends AcGameObject{
+    constructor(playground){
+        super();
+        this.playground = playground;
+        this.ctx = this.playground.game_map.ctx;
+
+        this.state = null; //win or lose
+        this.win_img = new Image();
+        this.win_img.src = "https://cdn.acwing.com/media/article/image/2021/12/17/1_8f58341a5e-win.png"
+        this.lose_img= new Image();
+        this.lose_img.src = "https://cdn.acwing.com/media/article/image/2021/12/17/1_9254b5f95e-lose.png";
+    }
+    start(){
+    }
+    add_listening_events(){
+        let outer = this;
+        //console.log(this.playground.game_map);
+        let $canvas = this.playground.game_map.$canvas;
+        $canvas.on("click",function(){
+            outer.playground.hide();
+            outer.playground.root.menu.show();
+        });
+    }
+
+    win(){
+        if (this.state === "win")
+            return  false;
+        let outer = this;
+        this.state = "win";
+        setTimeout(function(){
+            // console.log("enter win add listening events");
+            outer.add_listening_events();
+        },1000);
+    }
+    lose(){
+        let outer = this;
+        this.state = "lose";
+        setTimeout(function(){
+            outer.add_listening_events();
+        },1000);
+    }
+    late_update(){
+        this.render();
+    }
+    render(){
+        let len = this.playground.height / 2;
+        if (this.state === "win"){
+            //左上角坐标(x1,y1,长,宽)
+            //this.ctx.drawImage(this.win_img,this.playground.width / 2 - len / 2,this.playground.height - len / 2,len,len);
+            this.ctx.drawImage(this.win_img,this.playground.width/2-len/2,this.playground.height/2-len/2,len,len);
+        }   
+        else if (this.state === "lose"){
+            this.ctx.drawImage(this.lose_img,this.playground.width/2-len/2,this.playground.height/2-len/2,len,len);
+        }
+    }
+}class FireBall extends AcGameObject{
     constructor (playground,player,x,y,radius,vx,vy,color,speed,move_length,damage){
         super();
         this.playground = playground;
@@ -1123,13 +1194,35 @@ class AcGamePlayGround
         let colors = ["blue","red","orange","pink","green","yellow"];
         return colors[Math.floor(Math.random()* colors.length)];
     }
+    
+    create_uuid(){
+        let res = "";
+        for (let i = 0; i < 8 ; i++){
+            let x = parseInt(Math.floor(Math.random() * 10));
+            res += x;
+        }
+        return res;
+    }
 
     start()
     {
         let outer = this;
-        $(window).resize(function(){
+        let uuid = this.create_uuid(); //为了区分不同窗口的resize函数,因此随机生成随机数做区分;
+
+        //resize绑定在了window上,window是一个公共对象,每当窗口大小发生变化都会监听的,
+        //因此我们需要在acapp里面关闭游戏的时候移除这个监听函数
+        
+        $(window).on("resize.${uuid}",function(){
+            //console.log("resize")
             outer.resize();
         });
+        
+        // 添加关闭窗口的监听函数
+        if (this.root.acwingos){
+            this.root.acwingos.api.window.on_close(function(){
+                $(window).off("resize.${uuid}")
+            });
+        }
     }
 
     resize()
@@ -1154,13 +1247,14 @@ class AcGamePlayGround
         this.resize();
         this.players = [];
         this.noticeboard = new NoticeBoard(this);
+        this.scoreboard = new ScoreBoard(this);
         this.player_count = 0;
         this.state = "waiting"  // waiting -> fighting -> over
         // 绝对 to 相对
         this.players.push(new Player(
             this,
-            this.width/2 / this.scale ,
-            this.height/ 2 / this.scale ,
+            this.width / 2 / this.scale ,
+            this.height / 2 / this.scale ,
             this.height / this.scale * 0.05 ,
             "white",
             this.height / this.scale * 0.2,
@@ -1199,7 +1293,27 @@ class AcGamePlayGround
     }
 
     hide()
-    {
+    {   //关闭游戏界面,手动移除,直接修改全局变量会影响其他使用这份js的窗口
+        //删除玩家内容,注意不要使用for循环
+        while(this.players && this.players.length > 0){
+            this.players[0].destroy();
+        }
+        //game_map
+        if (this.game_map)
+        {
+            this.game_map.destroy();
+            this.game_map = null;
+        }
+        if (this.noticeboard)
+        {
+            this.noticeboard.destroy();
+            this.noticeboard = null;
+        }
+        if (this.scoreboard){
+            this.scoreboard.destroy();
+            this.scoreboard = null;
+        }
+        this.$playground.empty(); //清空这个div的内容
         this.$playground.hide();
     }
 

@@ -14,13 +14,35 @@ class AcGamePlayGround
         let colors = ["blue","red","orange","pink","green","yellow"];
         return colors[Math.floor(Math.random()* colors.length)];
     }
+    
+    create_uuid(){
+        let res = "";
+        for (let i = 0; i < 8 ; i++){
+            let x = parseInt(Math.floor(Math.random() * 10));
+            res += x;
+        }
+        return res;
+    }
 
     start()
     {
         let outer = this;
-        $(window).resize(function(){
+        let uuid = this.create_uuid(); //为了区分不同窗口的resize函数,因此随机生成随机数做区分;
+
+        //resize绑定在了window上,window是一个公共对象,每当窗口大小发生变化都会监听的,
+        //因此我们需要在acapp里面关闭游戏的时候移除这个监听函数
+        
+        $(window).on("resize.${uuid}",function(){
+            //console.log("resize")
             outer.resize();
         });
+        
+        // 添加关闭窗口的监听函数
+        if (this.root.acwingos){
+            this.root.acwingos.api.window.on_close(function(){
+                $(window).off("resize.${uuid}")
+            });
+        }
     }
 
     resize()
@@ -45,13 +67,14 @@ class AcGamePlayGround
         this.resize();
         this.players = [];
         this.noticeboard = new NoticeBoard(this);
+        this.scoreboard = new ScoreBoard(this);
         this.player_count = 0;
         this.state = "waiting"  // waiting -> fighting -> over
         // 绝对 to 相对
         this.players.push(new Player(
             this,
-            this.width/2 / this.scale ,
-            this.height/ 2 / this.scale ,
+            this.width / 2 / this.scale ,
+            this.height / 2 / this.scale ,
             this.height / this.scale * 0.05 ,
             "white",
             this.height / this.scale * 0.2,
@@ -90,7 +113,27 @@ class AcGamePlayGround
     }
 
     hide()
-    {
+    {   //关闭游戏界面,手动移除,直接修改全局变量会影响其他使用这份js的窗口
+        //删除玩家内容,注意不要使用for循环
+        while(this.players && this.players.length > 0){
+            this.players[0].destroy();
+        }
+        //game_map
+        if (this.game_map)
+        {
+            this.game_map.destroy();
+            this.game_map = null;
+        }
+        if (this.noticeboard)
+        {
+            this.noticeboard.destroy();
+            this.noticeboard = null;
+        }
+        if (this.scoreboard){
+            this.scoreboard.destroy();
+            this.scoreboard = null;
+        }
+        this.$playground.empty(); //清空这个div的内容
         this.$playground.hide();
     }
 

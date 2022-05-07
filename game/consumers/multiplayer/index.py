@@ -75,7 +75,34 @@ class MultiPlayer(AsyncWebsocketConsumer):
                 })
 
     async def attack(self,data):
-        # print(data)
+        if not self.room_name:
+            return 
+        players = cache.get(self.room_name)
+        if not players:
+            return
+        for player in players:
+            if player["uuid"] == data["attacked_uuid"]:
+                player["hp"] -= 25
+
+        remain_cnt = 0
+        for player in players:
+            if player["hp"] > 0: remain_cnt += 1
+        if remain_cnt > 1:
+            if self.room_name:
+                cache.set(self.room_name,players,3600)
+        else:
+            def update_player_score(username,score):
+                # get 只要返回的结果不是一个,就会报异常
+                # filter 要么0个，要么多个,不会报异常
+                player = Player.objects.get(user__username=username)
+                player.score += score
+                player.save()
+            for player in players:
+                if player["hp"]<=0:
+                    await database_sync_to_async(update_player_score)(player["username"],-5)
+                else:
+                    await database_sync_to_async(update_player_score)(player["username"],10)
+
         await self.channel_layer.group_send(self.room_name,
         {
             "type":"group_send_event",

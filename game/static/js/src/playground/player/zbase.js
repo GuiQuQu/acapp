@@ -30,7 +30,8 @@ class Player extends AcGameObject{
         }
         if (this.player_type === "me")
         {
-            this.fireball_coldtime = 3;
+            this.fireball_coldtime_total = 0.1;
+            this.fireball_coldtime = this.fireball_coldtime_total;
             this.fireball_img = new Image();
             this.fireball_img.src = "https://cdn.acwing.com/media/article/image/2021/12/02/1_9340c86053-fireball.png";
             //闪现CD
@@ -165,7 +166,7 @@ class Player extends AcGameObject{
                 return false;
             } else if (e.which === 70)
             {
-                if (outer.fireball_coldtime > outer.eps)
+                if (outer.blink_coldtime > outer.eps)
                     return true;
                 outer.cur_skill = "blink";
                 return false;
@@ -186,7 +187,7 @@ class Player extends AcGameObject{
         let move_length = this.playground.height / scale * 0.8;
         let fireball = new FireBall(this.playground,this,x,y,radius,vx,vy,color,speed,move_length,this.playground.height / scale * 0.01);
         this.fireballs.push(fireball);
-        this.fireball_coldtime = 3;
+        this.fireball_coldtime = this.fireball_coldtime_total;
         return fireball;
     }
 
@@ -251,8 +252,10 @@ class Player extends AcGameObject{
     on_destroy()
     {
         if (this.player_type === "me")
-        {
-            this.playground.state = "over";
+        {   if (this.playground.state === "fighting"){
+                this.playground.state = "over";
+                this.playground.scoreboard.lose();
+            }
         }
         for (let i = 0;i<this.playground.players.length;i++)
         {
@@ -265,15 +268,23 @@ class Player extends AcGameObject{
     }
     update()
     {
+        
         this.spend_time += this.timedelta / 1000;
         if (this.player_type === "me" && this.playground.state === "fighting")
         {
             this.update_coldtime();
         }
         this.update_move();
+        this.update_win();
         this.render();
     }
-
+    update_win(){
+        if (this.playground.state === "fighting" && this.player_type === "me" && this.playground.players.length == 1){
+            //注意只更新一次游戏胜利判定,确定胜利之后把本局状态更新为over,这样就不会继续判定胜利了
+            this.playground.state = "over";
+            this.playground.scoreboard.win();
+        }
+    }
     update_coldtime()
     {
         this.fireball_coldtime -= this.timedelta / 1000;
@@ -375,7 +386,7 @@ class Player extends AcGameObject{
             this.ctx.beginPath();
             this.ctx.moveTo(x * scale, y * scale);
             //调整绘制的角度,让冷却时间顺时针转
-            this.ctx.arc(x * scale,y * scale,r * scale,0 - Math.PI / 2,Math.PI * 2 * (1 -  this.fireball_coldtime / 3) - Math.PI / 2 ,true);
+            this.ctx.arc(x * scale,y * scale,r * scale,0 - Math.PI / 2,Math.PI * 2 * (1 -  this.fireball_coldtime / this.fireball_coldtime_total) - Math.PI / 2 ,true);
             this.ctx.lineTo(x * scale, y * scale);
             this.ctx.fillStyle = "rgba(0,0,255,0.6)";
             this.ctx.fill();
